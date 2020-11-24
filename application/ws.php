@@ -59,6 +59,10 @@ set_error_handler('err');
 if (!is_file($ini = '../../www/application/config.ini')) err('No ini-file found', true);
 if (!$ini = parse_ini_file($ini, true)) err('Ini-file found but parsing failed', true);
 if (!array_key_exists('ws', $ini)) err('No [ws] section found in ini-file', true);
+if ($ini['ws']['realtime']) {
+    require '../library/Db.php';
+    $db = new Db($ini['db']['host'], $ini['db']['username'],  $ini['db']['password'], $ini['db']['dbname']);
+}
 if (!$ini = $ini['ws']) err('[ws] section found, but it is empty', true);
 if (!array_key_exists('port', $ini)) err('No socket port specified in ini-file', true);
 if (!$port = (int) $ini['port']) err('Invalid socket port specified in ini-file', true);
@@ -168,12 +172,28 @@ while (true) {
         // Accept client's stream
         if (($clientI = stream_socket_accept($server, -1)) && $info = handshake($clientI)) {
 
-            // Add to collection
-            $clientA[] = $clientI;
-
             // Write empty json
             fwrite($clientI, encode('{}'));
-            file_put_contents('ws.chl', date('Y-m-d H:i:s') . ' => handshake: ' . print_r($info, true) . "\n", FILE_APPEND);
+
+            // If  session id detected, and `realtime` entry of `type` = "session" found
+            if (preg_match('~PHPSESSID=([^; ]+)~', $info['Cookie'], $m)
+                && $session = $db->rget('realtime', '`type` = "session" AND `token` = "' . $m[1] . '"')) {
+
+                // Prepate data for `realtime` entry of `type` = "channel"
+                $data = [
+                    'type' => 'channel', 'token' => $info['Sec-WebSocket-Key'],
+                    'realtimeId' => $session['id'], 'spaceSince' => date('Y-m-d H:i:s')
+                ] + $session;
+
+                // Unset 'id'
+                unset($data['id']);
+
+                // Save into `realtime` table
+                $db->save('realtime', $data);
+            }
+
+            // Add to collection
+            $clientA[$info['Sec-WebSocket-Key'] ?: count($clientA)] = $clientI;
         }
 
         // Remove server's socket from the list of sockets to be listened
@@ -202,6 +222,16 @@ while (true) {
 
                         // Remove channel from channels registry
                         unset($channelA[$rid][$uid][$index]);
+
+                        // Try to find `realtime` representing the channel
+                        if ($channel = $db->rget('realtime', '`type` = "channel" AND `token` = "' . $index . '"')) {
+
+                            // Delete channel's contexts
+                            $db->query('DELETE FROM `realtime` WHERE `type` = "context" AND `realtimeId` = "' . $channel['id'] . '"');
+
+                            // Delete channel itself
+                            $db->query('DELETE FROM `realtime` WHERE `id` = "' . $channel['id'] . '"');
+                        }
 
                         // Log that channel was closed
                         if ($ini['log']) file_put_contents('ws.chl',
@@ -266,6 +296,7 @@ while (true) {
             // Write pong-message into channel
             fwrite($clientA[$channelA[$rid][$uid][$data['cid']]], encode(json_encode($data)));
 
+        // Else if message type is 'notice' or 'reload'
         } else if ($data['type'] == 'notice' || $data['type'] == 'reload') {
 
             // If logging is On - do log
@@ -300,6 +331,12 @@ while (true) {
                             fwrite($clientA[$channelA[$rid][$uid][$cid]], encode(json_encode($data)));
                         }
             }
+
+        // Else if message type is 'realtime'
+        } else if ($data['type'] == 'realtime') {
+
+            // If recepient channel exists - write message into channel
+            if ($clientA[$data['to']]) fwrite($clientA[$data['to']], encode(json_encode($data)));
         }
     }
 }

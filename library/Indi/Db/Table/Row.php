@@ -689,8 +689,78 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Update usages
         if (!$new) $this->_updateUsages();
 
+        // For now, only existing entries changes are supported
+        if (!$new) $this->realtime();
+
         // Return current row id (in case if it was a new row) or number of affected rows (1 or 0)
         return $return;
+    }
+
+    /**
+     * Get info about affected fields and send it to websocket-channels,
+     * that are representing browser tabs having grids where current entry
+     * and old values of it's affected fields are displayed
+     */
+    public function realtime() {
+
+        // If websockets are not enabled, or realtime is not enabled - return
+        if (!Indi::ini('ws')->enabled || !Indi::ini('ws')->realtime) return;
+
+        // Temporarily ignore modifications for `realtime` and `queue*` entries
+        if (preg_match('~(realtime|queue)~', $this->_table)) return;
+
+        // If no fields affected - return
+        if (!$fieldIdA_affected = $this->field(array_keys($this->_affected))->column('id')) return;
+
+        // Fetch matching `realtime` entries
+        $realtimeRs = m('Realtime')->fetchAll([
+            '`type` = "context"',
+            '`entityId` = "' . $this->model()->id() . '"',
+            'CONCAT(",", `fields`, ",") REGEXP ",(' . im($fieldIdA_affected, '|') . '),"',
+            'CONCAT(",", `entries`, ",") REGEXP ",(' . $this->id . '),"',
+        ]);
+
+        // Pull foreign data for `realtimeId` key
+        $realtimeRs->foreign('realtimeId');
+
+        // Foreach
+        foreach ($realtimeRs as $realtimeR) {
+
+            // Get channel
+            $channel = $realtimeR->foreign('realtimeId')->token;
+
+            // Get context
+            $context = $realtimeR->token;
+
+            // Get IDs of affected fields involved by context
+            $fieldIds = array_intersect($fieldIdA_affected, ar($realtimeR->fields));
+
+            // Prepare blank data and group it by channel and context
+            $byChannel[$channel][$context] = [
+                'table' => $this->_table,
+                'entry' => $this->id,
+                'affected' => []
+            ];
+
+            // Get aliases of affected fields involved by context
+            $dataColumns = [];
+            foreach ($fieldIds as $fieldId)
+                if ($field = $this->field($fieldId)->alias)
+                    $dataColumns[] = $field;
+
+            // Prepare grid data, however with no adjustments that could be applied at section/controller-level
+            $data = [$this->toGridData($dataColumns)];
+
+            // Append new values of affected fields involved by context
+            $byChannel[$channel][$context]['affected'] = array_shift($data);
+        }
+
+        // Send data to each channel
+        foreach ($byChannel as $channel => $byContext) Indi::ws([
+            'type' => 'realtime',
+            'to' => $channel,
+            'data' => $byContext
+        ]);
     }
 
     /**

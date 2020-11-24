@@ -458,7 +458,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
 
         // Else if current trail item doesn't have a row, but parent trail item do - append it's id
         else if ($this->parent()->row)
-            $bid .= '-parentrow-' + (int) $this->parent()->row->id;
+            $bid .= '-parentrow-' . (int) $this->parent()->row->id;
 
         // Return base id
         return $bid;

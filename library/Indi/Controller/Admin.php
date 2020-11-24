@@ -99,6 +99,18 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Perform authentication
         $this->auth();
 
+        // If $_POST['destroy'] is only given, and websocket-channel is known - remove context
+        if ((count(Indi::post()) == 1)
+            && CID
+            && ($token = Indi::post('destroy'))) {
+            if (($channel = m('realtime')->fetchRow('`type` = "channel" AND `token` = "' . CID . '"'))
+                && ($context = m('realtime')->fetchRow('`type` = "context" AND `token` = "' . $token . '" AND `realtimeId` = "' . $channel->id . '"'))) {
+                $context->delete();
+                jflush(true);
+            }
+            jflush(false);
+        }
+
         // Jump, if need
         $this->jump();
 
@@ -197,6 +209,12 @@ class Indi_Controller_Admin extends Indi_Controller {
 
                     // If we should try another page - do it
                     } while ($shift && (Indi::get()->page = $shift));
+
+                    // Track involved entries
+                    if ($_ = m('realtime')->fetchRow([
+                        '`type` = "context"',
+                        '`token` = "' . t()->bid() . '"'
+                    ])) $_->assign(['entries' => $this->rowset->column('id', ',')])->save();
 
                     /**
                      * Remember current rowset properties SQL - WHERE, ORDER, LIMIT clauses - to be able to apply these properties in cases:
@@ -2088,6 +2106,15 @@ class Indi_Controller_Admin extends Indi_Controller {
                     $allowedA = array('id', 'title', 'email', 'password', 'profileId', 'profileTitle', 'alternate', 'mid');
                     foreach ($allowedA as $allowedI) $_SESSION['admin'][$allowedI] = $data[$allowedI];
 
+                    // Create `realtime` entry having `type` = 'session'
+                    m('Realtime')->createRow([
+                        'type' => 'session',
+                        'profileId' => $_SESSION['admin']['profileId'],
+                        'adminId' => $_SESSION['admin']['id'],
+                        'token' => session_id(),
+                        'langId' => m('Lang')->fetchRow('`alias` = "' . $_COOKIE['i-language'] . '"')->id,
+                    ], true)->save();
+
                     // Flush response
                     jflush(true, APP ? $this->info() : array('ok' => '1'));
                 }
@@ -2854,6 +2881,12 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Unset session
         if ($_SESSION['admin']['id'])  unset($_SESSION['admin'], $_SESSION['indi']['admin']);
+
+        // Remove session
+        if ($_ = m('Realtime')->fetchRow([
+            '`type` = "session"',
+            '`token` = "' . $_COOKIE['PHPSESSID'] . '"'
+        ], '`id` DESC')) $_->delete();
 
         // Flush basic info
         if (APP) jflush(true, array(

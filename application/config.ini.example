@@ -14,6 +14,7 @@ dbname   = empty
 
 [ws]
 enabled = false
+realtime = false
 socket =
 
 [mail]
