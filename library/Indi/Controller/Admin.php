@@ -193,57 +193,70 @@ class Indi_Controller_Admin extends Indi_Controller {
                     // Get final ORDER clause, built regarding column name and sorting direction
                     $finalORDER = $this->finalORDER($finalWHERE, Indi::get()->sort);
 
-                    // Try to get rowset
-                    do {
+                    // If $_GET['affected'] given
+                    if ($affected = (int) Indi::get('affected')) {
 
-                        // Get the rowset, fetched using WHERE and ORDER clauses, and with built LIMIT clause,
-                        // constructed with usage of Indi::get('limit') and Indi::get('page') params
+                        // Fetch rowset consisting of only single row
                         $this->rowset = Indi::trail()->model->{
                         'fetch'. (Indi::trail()->model->treeColumn() && !$this->actionCfg['misc']['index']['ignoreTreeColumn'] ? 'Tree' : 'All')
-                        }($finalWHERE, $finalORDER,
-                            $limit = Indi::uri()->format == 'json' || !Indi::uri()->format ? (int) Indi::get('limit') : null,
-                            $page  = Indi::uri()->format == 'json' || !Indi::uri()->format ? (int) Indi::get('page') : null);
+                        }('`id` = "' . $affected . '"' . rif($finalWHERE, ' AND ($1)'), $finalORDER);
 
-                        // If we're at 2nd or further page, but no results - try to detect new prev page
-                        $shift = $limit && $page > 1 && !$this->rowset->count() && ($found = $this->rowset->found()) ? ceil($found/$limit) : 0;
+                    // Else behave in an standard way
+                    } else {
 
-                    // If we should try another page - do it
-                    } while ($shift && (Indi::get()->page = $shift));
+                        // Try to get rowset
+                        do {
 
-                    // Track involved entries
-                    if ($_ = m('realtime')->fetchRow([
-                        '`type` = "context"',
-                        '`token` = "' . t()->bid() . '"'
-                    ])) $_->assign(['entries' => $this->rowset->column('id', ',')])->save();
+                            // Get the rowset, fetched using WHERE and ORDER clauses, and with built LIMIT clause,
+                            // constructed with usage of Indi::get('limit') and Indi::get('page') params
+                            $this->rowset = Indi::trail()->model->{
+                            'fetch' . (Indi::trail()->model->treeColumn() && !$this->actionCfg['misc']['index']['ignoreTreeColumn'] ? 'Tree' : 'All')
+                            }($finalWHERE, $finalORDER,
+                                $limit = Indi::uri()->format == 'json' || !Indi::uri()->format ? (int)Indi::get('limit') : null,
+                                $page = Indi::uri()->format == 'json' || !Indi::uri()->format ? (int)Indi::get('page') : null);
 
-                    /**
-                     * Remember current rowset properties SQL - WHERE, ORDER, LIMIT clauses - to be able to apply these properties in cases:
-                     *
-                     * 1. We were in one section, made some search by filters and/or keyword, did sorting by some column, went to some page.
-                     *    After that we went to another section, and then decide to return to the first. So, by this function, system will be
-                     *    able to retrieve first section's params from $_SESSION, and display the grid in the exact same way as it was when
-                     *    we had left it.
-                     * 2. We were in one section, made some search by filters and/or keyword, did sorting by some column, went to some page and
-                     *    clicked 'Details' on some row on that page, so the details form was displayed. So, this function is one of providing
-                     *    an ability to navigate/jump to current row's siblings - go to prev/next rows. Foк example if we have a States section,
-                     *    and we go to it, and types 'Ala' in fast-keyword-search field, so the corresponding results were displayed. Then, if we
-                     *    go to 'Alabama' form screen, there will be buttons titled "Prev" and "Next". For example, by clicking Next, the Alaska's
-                     *    editing form will be displayed instead of Alabama's. But there will be certainly no 'Ohio'.
-                     *
-                     * Actually, the only one param is stored as SQL-string - $primary param. This params includes all parts of WHERE clause, that
-                     * was used to retrieve a current rowset, but except parts, related to filters/keyword search usage. There parts are
-                     * stored as JSON-string, because it is much more easier to get last used filters's values from JSON rather than SQL.
-                     *
-                     * Function creates a hash-key (md5 from $primary param) to place the array of scope params under this key in $_SESSION
-                     *
-                     * $order param is stored in JSON format too, because it will be passed to Ext.grid
-                     */
-                    Indi::trail()->scope->apply(array(
-                        'primary' => $primaryWHERE, 'filters' => Indi::get()->search, 'keyword' => Indi::get()->keyword,
-                        'order' => Indi::get()->sort, 'page' => Indi::get()->page, 'found' => $this->rowset->found(),
-                        'WHERE' => $finalWHERE, 'ORDER' => $finalORDER, 'hash' => Indi::trail()->section->primaryHash
-                    ));
-        /* // */}
+                            // If we're at 2nd or further page, but no results - try to detect new prev page
+                            $shift = $limit && $page > 1 && !$this->rowset->count() && ($found = $this->rowset->found()) ? ceil($found / $limit) : 0;
+
+                        // If we should try another page - do it
+                        } while ($shift && (Indi::get()->page = $shift));
+
+                        // Track involved entries
+                        if ($_ = m('realtime')->fetchRow([
+                            '`type` = "context"',
+                            '`token` = "' . t()->bid() . '"',
+                            '`realtimeId` = "' . m('realtime')->fetchRow('`token` = "' . CID . '"')->id . '"'
+                        ])) $_->assign(['entries' => $this->rowset->column('id', ',')])->save();
+
+                        /**
+                         * Remember current rowset properties SQL - WHERE, ORDER, LIMIT clauses - to be able to apply these properties in cases:
+                         *
+                         * 1. We were in one section, made some search by filters and/or keyword, did sorting by some column, went to some page.
+                         *    After that we went to another section, and then decide to return to the first. So, by this function, system will be
+                         *    able to retrieve first section's params from $_SESSION, and display the grid in the exact same way as it was when
+                         *    we had left it.
+                         * 2. We were in one section, made some search by filters and/or keyword, did sorting by some column, went to some page and
+                         *    clicked 'Details' on some row on that page, so the details form was displayed. So, this function is one of providing
+                         *    an ability to navigate/jump to current row's siblings - go to prev/next rows. For example if we have a States section,
+                         *    and we go to it, and types 'Ala' in fast-keyword-search field, so the corresponding results were displayed. Then, if we
+                         *    go to 'Alabama' form screen, there will be buttons titled "Prev" and "Next". For example, by clicking Next, the Alaska's
+                         *    editing form will be displayed instead of Alabama's. But there will be certainly no 'Ohio'.
+                         *
+                         * Actually, the only one param is stored as SQL-string - $primary param. This params includes all parts of WHERE clause, that
+                         * was used to retrieve a current rowset, but except parts, related to filters/keyword search usage. There parts are
+                         * stored as JSON-string, because it is much more easier to get last used filters's values from JSON rather than SQL.
+                         *
+                         * Function creates a hash-key (md5 from $primary param) to place the array of scope params under this key in $_SESSION
+                         *
+                         * $order param is stored in JSON format too, because it will be passed to Ext.grid
+                         */
+                        Indi::trail()->scope->apply(array(
+                            'primary' => $primaryWHERE, 'filters' => Indi::get()->search, 'keyword' => Indi::get()->keyword,
+                            'order' => Indi::get()->sort, 'page' => Indi::get()->page, 'found' => $this->rowset->found(),
+                            'WHERE' => $finalWHERE, 'ORDER' => $finalORDER, 'hash' => Indi::trail()->section->primaryHash
+                        ));
+                    }
+                }
 
             // Else if where is some another action
             } else {

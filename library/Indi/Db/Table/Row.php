@@ -756,7 +756,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         }
 
         // Send data to each channel
-        foreach ($byChannel as $channel => $byContext) Indi::ws([
+        if ($byChannel) foreach ($byChannel as $channel => $byContext) Indi::ws([
             'type' => 'realtime',
             'to' => $channel,
             'data' => $byContext

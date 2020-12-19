@@ -793,6 +793,9 @@ class Indi_Controller {
                 $this->renderGridDataItem($item, $r);
             }
 
+            // Flush
+            if ($affected = (int) Indi::get('affected')) jflush(true, ['affected' => array_pop($data)]);
+
             // Else if data is gonna be used in the excel spreadsheet building process, pass it to a special function
             if (in(Indi::uri('format'), 'excel,pdf')) $this->export($data, Indi::uri('format'));
 
