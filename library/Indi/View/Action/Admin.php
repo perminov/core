@@ -37,30 +37,12 @@ class Indi_View_Action_Admin implements Indi_View_Action_Interface {
      */
     public function render() {
 
-        // If channel found
-        if ($channel = m('realtime')->fetchRow('`token` = "' . CID . '"')) {
-
-            // Get data to be copied
-            $data = $channel->original(); unset($data['id'], $data['spaceSince']);
-
-            // Normalize `up` argument
-            $up = 0;
-
-            // Get involved fields
-            $fields = t($up)->row
-                ? t()->fields->select('readonly,ordinary', 'mode')->column('id', ',')
-                : t()->gridFields->select(': > 0')->column('id', ',');
-
-            // Create `realtime` entry of `type` = "context"
-            m('realtime')->createRow([
-                'realtimeId' => $channel->id,
-                'type' => 'context',
-                'token' => t()->bid(),
-                'sectionId' => t()->section->id,
-                'entityId' => t()->section->entityId,
-                'fields' => $fields
-            ] + $data, true)->save();
-        }
+        // Create `realtime` entry having `type` = "context"
+        if (!m('realtime')->fetchRow([
+            '`type` = "context"',
+            '`token` = "' . t()->bid() . '"',
+            '`realtimeId` = "' . m('realtime')->fetchRow('`token` = "' . CID . '"')->id . '"'
+        ])) t()->context();
 
         // Return json-encoded trail data
         return json_encode(array('route' =>Indi::trail(true)->toArray(), 'plain' => $this->plain), JSON_UNESCAPED_UNICODE);

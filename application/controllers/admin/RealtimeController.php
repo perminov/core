@@ -47,4 +47,14 @@ class Admin_RealtimeController extends Indi_Controller_Admin {
         // Flush response
         jflush(false, 'There is nothing to be restarted');
     }
+
+    /**
+     * Append role title to admin title
+     *
+     * @param $item
+     * @param $r
+     */
+    public function renderGridDataItem(&$item, $r) {
+        $item['adminId'] .= ' [' .  $item['profileId'] . ']';
+    }
 }

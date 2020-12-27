@@ -226,7 +226,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                             '`type` = "context"',
                             '`token` = "' . t()->bid() . '"',
                             '`realtimeId` = "' . m('realtime')->fetchRow('`token` = "' . CID . '"')->id . '"'
-                        ])) $_->assign(['entries' => $this->rowset->column('id', ',')])->save();
+                        ]) ?: t()->context()) $_->assign(['entries' => $this->rowset->column('id', ',')])->save();
 
                         /**
                          * Remember current rowset properties SQL - WHERE, ORDER, LIMIT clauses - to be able to apply these properties in cases:

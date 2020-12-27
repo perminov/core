@@ -186,7 +186,7 @@ while (true) {
                 ] + $session;
 
                 // Unset 'id'
-                unset($data['id']);
+                unset($data['id'], $data['title']);
 
                 // Save into `realtime` table
                 $db->save('realtime', $data);
