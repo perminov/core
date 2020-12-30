@@ -194,12 +194,20 @@ class Indi_Controller_Admin extends Indi_Controller {
                     $finalORDER = $this->finalORDER($finalWHERE, Indi::get()->sort);
 
                     // If $_GET['affected'] given
-                    if ($affected = (int) Indi::get('affected')) {
+                    if ($affectedOrInserted = (int) Indi::get('affected') ?: (int) Indi::get('inserted')) {
 
                         // Fetch rowset consisting of only single row
                         $this->rowset = Indi::trail()->model->{
                         'fetch'. (Indi::trail()->model->treeColumn() && !$this->actionCfg['misc']['index']['ignoreTreeColumn'] ? 'Tree' : 'All')
-                        }('`id` = "' . $affected . '"' . rif($finalWHERE, ' AND ($1)'), $finalORDER);
+                        }('`id` = "' . $affectedOrInserted . '"' . rif($finalWHERE, ' AND ($1)'), $finalORDER);
+
+                    // Else if $_GET['indexed'] given
+                    } else if ($indexed = (int) Indi::get('indexed')) {
+
+                        // Fetch rowset consisting of only single row
+                        $this->rowset = t()->model->{
+                        'fetch'. (t()->model->treeColumn() && !$this->actionCfg['misc']['index']['ignoreTreeColumn'] ? 'Tree' : 'All')
+                        }(t()->scope->WHERE, t()->scope->ORDER, 1, null, $indexed);
 
                     // Else behave in an standard way
                     } else {
@@ -221,12 +229,22 @@ class Indi_Controller_Admin extends Indi_Controller {
                         // If we should try another page - do it
                         } while ($shift && (Indi::get()->page = $shift));
 
+                        // Scope params
+                        $scope = [
+                            'primary' => $primaryWHERE, 'filters' => Indi::get()->search, 'keyword' => Indi::get()->keyword,
+                            'order' => Indi::get()->sort, 'page' => Indi::get()->page, 'found' => $this->rowset->found(),
+                            'WHERE' => $finalWHERE, 'ORDER' => $finalORDER, 'hash' => Indi::trail()->section->primaryHash
+                        ];
+
                         // Track involved entries
                         if ($_ = m('realtime')->fetchRow([
                             '`type` = "context"',
                             '`token` = "' . t()->bid() . '"',
                             '`realtimeId` = "' . m('realtime')->fetchRow('`token` = "' . CID . '"')->id . '"'
-                        ]) ?: t()->context()) $_->assign(['entries' => $this->rowset->column('id', ',')])->save();
+                        ]) ?: t()->context()) $_->assign([
+                            'entries' => $this->rowset->column('id', ','),
+                            'scope' => json_encode($scope)
+                        ])->save();
 
                         /**
                          * Remember current rowset properties SQL - WHERE, ORDER, LIMIT clauses - to be able to apply these properties in cases:
@@ -250,11 +268,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                          *
                          * $order param is stored in JSON format too, because it will be passed to Ext.grid
                          */
-                        Indi::trail()->scope->apply(array(
-                            'primary' => $primaryWHERE, 'filters' => Indi::get()->search, 'keyword' => Indi::get()->keyword,
-                            'order' => Indi::get()->sort, 'page' => Indi::get()->page, 'found' => $this->rowset->found(),
-                            'WHERE' => $finalWHERE, 'ORDER' => $finalORDER, 'hash' => Indi::trail()->section->primaryHash
-                        ));
+                        Indi::trail()->scope->apply($scope);
                     }
                 }
 

@@ -658,7 +658,8 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
                 'sectionId' => t()->section->id,
                 'entityId' => t()->section->entityId,
                 'fields' => $fields,
-                'title' => Indi::trail(true)->toString()
+                'title' => Indi::trail(true)->toString(),
+                'mode' => $this->action->rowRequired == 'y' ? 'row' : 'rowset'
             ] + $data, true);
 
             // Save it

@@ -690,7 +690,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         if (!$new) $this->_updateUsages();
 
         // For now, only existing entries changes are supported
-        if (!$new) $this->realtime();
+        $this->realtime($new ? 'inserted' : 'affected');
 
         // Return current row id (in case if it was a new row) or number of affected rows (1 or 0)
         return $return;
@@ -701,7 +701,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      * that are representing browser tabs having grids where current entry
      * and old values of it's affected fields are displayed
      */
-    public function realtime() {
+    public function realtime($event = 'affected') {
 
         // If websockets are not enabled, or realtime is not enabled - return
         if (!Indi::ini('ws')->enabled || !Indi::ini('ws')->realtime) return;
@@ -709,16 +709,27 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Temporarily ignore modifications for `realtime` and `queue*` entries
         if (preg_match('~(realtime|queue)~', $this->_table)) return;
 
-        // If no fields affected - return
-        if (!$fieldIdA_affected = $this->field(array_keys($this->_affected))->column('id')) return;
-
-        // Fetch matching `realtime` entries
-        $realtimeRs = m('Realtime')->fetchAll([
+        // Start building WHERE clause
+        $where = [
             '`type` = "context"',
             '`entityId` = "' . $this->model()->id() . '"',
-            'CONCAT(",", `fields`, ",") REGEXP ",(' . im($fieldIdA_affected, '|') . '),"',
-            'CONCAT(",", `entries`, ",") REGEXP ",(' . $this->id . '),"',
-        ]);
+        ];
+
+        // If $event is 'affected' or 'deleted' - append clause for `fields` column
+        if (in($event, 'affected,deleted')) $where []= 'CONCAT(",", `entries`, ",") REGEXP ",(' . $this->id . '),"';
+
+        // If $event is  'affected'
+        if ($event == 'affected') {
+
+            // If no fields affected - return
+            if (!$fieldIdA_affected = $this->field(array_keys($this->_affected))->column('id')) return;
+
+            // Append clause for `fields` column
+            $where []= 'CONCAT(",", `fields`, ",") REGEXP ",(' . im($fieldIdA_affected, '|') . '),"';
+        }
+
+        // Fetch matching `realtime` entries
+        $realtimeRs = m('Realtime')->fetchAll($where);
 
         // Pull foreign data for `realtimeId` key
         $realtimeRs->foreign('realtimeId');
@@ -732,27 +743,54 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Get context
             $context = $realtimeR->token;
 
-            // Get IDs of affected fields involved by context
-            $fieldIds = array_intersect($fieldIdA_affected, ar($realtimeR->fields));
-
             // Prepare blank data and group it by channel and context
             $byChannel[$channel][$context] = [
                 'table' => $this->_table,
-                'entry' => $this->id,
-                'affected' => []
+                'entry' => $this->id
             ];
 
-            // Get aliases of affected fields involved by context
-            $dataColumns = [];
-            foreach ($fieldIds as $fieldId)
-                if ($field = $this->field($fieldId)->alias)
-                    $dataColumns[] = $field;
+            // If $event is 'affected'
+            if ($event == 'affected') {
 
-            // Prepare grid data, however with no adjustments that could be applied at section/controller-level
-            $data = [$this->toGridData($dataColumns)];
+                // Get IDs of affected fields involved by context
+                $fieldIds = array_intersect($fieldIdA_affected, ar($realtimeR->fields));
 
-            // Append new values of affected fields involved by context
-            $byChannel[$channel][$context]['affected'] = array_shift($data);
+                // Get aliases of affected fields involved by context
+                $dataColumns = [];
+                foreach ($fieldIds as $fieldId)
+                    if ($field = $this->field($fieldId)->alias)
+                        $dataColumns[] = $field;
+
+                // Prepare grid data, however with no adjustments that could be applied at section/controller-level
+                $data = [$this->toGridData($dataColumns)];
+
+                // Append new values of affected fields involved by context
+                $byChannel[$channel][$context]['affected'] = array_shift($data);
+
+            // Else if $event is 'deleted'
+            } else if ($event == 'deleted') {
+
+                // Setup 'deleted' flag
+                $byChannel[$channel][$context]['deleted'] = true;
+
+                // Drop current entry ID from `entries` column of `realtime` entry
+                $realtimeR->drop('entries', $this->id);
+
+                // Update `realtime` entry
+                $realtimeR->basicUpdate();
+
+            // Else if $event is 'inserted'
+            } else if ($event == 'inserted') {
+
+                // Setup 'deleted' flag
+                $byChannel[$channel][$context]['inserted'] = true;
+
+                // Drop current entry ID from `entries` column of `realtime` entry
+                $realtimeR->push('entries', $this->id);
+
+                // Update `realtime` entry
+                $realtimeR->basicUpdate();
+            }
         }
 
         // Send data to each channel
@@ -1340,6 +1378,9 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Do some custom things
         $this->onDelete();
+
+        // Notify UI-users
+        $this->realtime('deleted');
 
         // Unset `id` prop
         $this->id = null;
