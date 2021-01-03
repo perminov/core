@@ -2,18 +2,25 @@
 class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
     /**
-     * Array of rows, that are stored within current rowset
-     *
-     * @var array
-     */
-    protected $_rows = array();
-
-    /**
      * Table name of table, that current rowset is related to
      *
      * @var string
      */
     protected $_table = '';
+
+    /**
+     * Sql query used to fetch this rowset
+     *
+     * @var mixed (null,int)
+     */
+    protected $_query = null;
+
+    /**
+     * Array of rows, that are stored within current rowset
+     *
+     * @var array
+     */
+    protected $_rows = array();
 
     /**
      * Contain keys, that current rowset have nested rowsets under
@@ -52,18 +59,24 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
     protected $_page = null;
 
     /**
+     * Previous page's last entry
+     * Applicable only for 2nd and further pages
+     * We need this to detect the non-exact position of any new entry relative to current page's
+     * results according to WHERE and ORDER clauses that were used for fetching the rowset.
+     * For now, it will be used for realtime-feature, so that if some user opened a UI-grid with `product` entries,
+     * but there was NEW `product` entry added, system should be able to detect whether this event should affect the
+     * dataset currently displayed at user's UI-grid
+     *
+     * @var bool|Indi_Db_Table_Row
+     */
+    protected $_pgupLast = false;
+
+    /**
      * Indi_Db_Table_Row class name.
      *
      * @var string
      */
     protected $_rowClass = 'Indi_Db_Table_Row';
-
-    /**
-     * Sql query used to fetch this rowset
-     *
-     * @var mixed (null,int)
-     */
-    protected $_query = null;
 
     /**
      * Constructor.
@@ -111,6 +124,9 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         if (isset($config['page'])) $this->_page = $config['page'];
         if (isset($config['found'])) $this->_found = $config['found'];
         if (isset($config['query'])) $this->_query = $config['query'];
+
+        // If prev-page-last flag is `true` - shift first row for it to be that prev-page-last row
+        if ($config['pgupLast']) $this->_pgupLast = array_shift($this->_rows);
 
         $this->_count = count($this->_rows);
     }
@@ -1722,5 +1738,14 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
         // Return rowset itself
         return $this;
+    }
+
+    /**
+     * Getter for $this->_pgupLast
+     *
+     * @return bool|Indi_Db_Table_Row|mixed
+     */
+    public function pgupLast() {
+        return $this->_pgupLast;
     }
 }

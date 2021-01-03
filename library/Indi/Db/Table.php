@@ -277,9 +277,11 @@ class Indi_Db_Table
      * @param null|int $count
      * @param null|int $page
      * @param null|int $offset
+     * @param bool $split
+     * @param bool $pgupLast If `true` is given, previous page's last entry will be captured by decrementing OFFSET and incrementing LIMIT by 1
      * @return Indi_Db_Table_Rowset
      */
-    public function fetchAll($where = null, $order = null, $count = null, $page = null, $offset = null, $split = null) {
+    public function fetchAll($where = null, $order = null, $count = null, $page = null, $offset = null, $split = null, $pgupLast = false) {
         // Build WHERE and ORDER clauses
         if (is_array($where) && count($where = un($where, array(null, '')))) $where = implode(' AND ', $where);
         if (is_array($order) && count($order = un($order, array(null, '')))) $order = implode(', ', $order);
@@ -287,6 +289,16 @@ class Indi_Db_Table
         // Build LIMIT clause
         if ($count !== null || $page !== null) {
             $offset = (is_null($page) ? ($count ? 0 : $page) : $count * ($page - 1)) + ($offset ? $offset : 0);
+
+            // If $pgupLast flag is true, and desired page is 2nd or more
+            if ($page > 1 && $pgupLast) {
+
+                // Shift $offset back by 1 and $count front by 1 to capture previous page's last entry
+                $offset --; $count ++;
+
+            // Else set $pgupLast flag to false, as if it even was given as true it does make sense only if $page > 1
+            } else if ($pgupLast) $pgupLast = false;
+
             if ($offset < 0) {
                 $count -= abs($offset);
                 $offset = 0;
@@ -330,6 +342,7 @@ class Indi_Db_Table
             'rowClass' => $this->_rowClass,
             'found'=> $limit ? $this->_found($where, $union) : count($data),
             'page' => $page,
+            'pgupLast' => $pgupLast,
             'query' => $sql
         );
 

@@ -729,7 +729,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         }
 
         // Fetch matching `realtime` entries
-        $realtimeRs = m('Realtime')->fetchAll($where);
+        $realtimeRs = m('Realtime')->fetchAll($where)->exclude(': != "context"', 'type');
 
         // Pull foreign data for `realtimeId` key
         $realtimeRs->foreign('realtimeId');
@@ -742,12 +742,6 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // Get context
             $context = $realtimeR->token;
-
-            // Prepare blank data and group it by channel and context
-            $byChannel[$channel][$context] = [
-                'table' => $this->_table,
-                'entry' => $this->id
-            ];
 
             // If $event is 'affected'
             if ($event == 'affected') {
@@ -764,14 +758,22 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // Prepare grid data, however with no adjustments that could be applied at section/controller-level
                 $data = [$this->toGridData($dataColumns)];
 
-                // Append new values of affected fields involved by context
-                $byChannel[$channel][$context]['affected'] = array_shift($data);
+                // Prepare blank data and group it by channel and context
+                $byChannel[$channel][$context] = [
+                    'table' => $this->_table,
+                    'entry' => $this->id,
+                    'affected' => array_shift($data)
+                ];
 
             // Else if $event is 'deleted'
             } else if ($event == 'deleted') {
 
-                // Setup 'deleted' flag
-                $byChannel[$channel][$context]['deleted'] = true;
+                // Prepare blank data and group it by channel and context
+                $byChannel[$channel][$context] = [
+                    'table' => $this->_table,
+                    'entry' => $this->id,
+                    'deleted' => true
+                ];
 
                 // Drop current entry ID from `entries` column of `realtime` entry
                 $realtimeR->drop('entries', $this->id);
@@ -782,14 +784,102 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Else if $event is 'inserted'
             } else if ($event == 'inserted') {
 
-                // Setup 'deleted' flag
-                $byChannel[$channel][$context]['inserted'] = true;
+                // Get scope
+                $scope = json_decode($realtimeR->scope, true); $entries = false;
 
-                // Drop current entry ID from `entries` column of `realtime` entry
-                $realtimeR->push('entries', $this->id);
+                //
+                if (!$scope['WHERE'] || Indi::db()->query($sql = '
+                    SELECT `id` FROM `' . $this->_table . '` WHERE `id` = "' . $this->id . '" AND (' . $scope['WHERE'] . ')'
+                )->fetchColumn()) {
 
-                // Update `realtime` entry
-                $realtimeR->basicUpdate();
+                    // Prepare blank data and group it by channel and context
+                    $byChannel[$channel][$context] = [
+                        'table' => $this->_table,
+                        'entry' => $this->id,
+                        'inserted' => true
+                    ];
+
+                    // If there are at least 1 entry on current page
+                    if ($realtimeR->entries) {
+
+                        // Get the ordered IDs: pgupLast, current, and newly added
+                        $idA = Indi::db()->query($sql = '
+                            SELECT `id` FROM `' . $this->_table . '`
+                            WHERE `id` IN (' . rif($scope['pgupLast'], '$1,') . rif($realtimeR->entries, '$1,') .  $this->id . ')
+                            ORDER BY ' . im($scope['ORDER'], ', ') . '
+                        ')->fetchAll(PDO::FETCH_COLUMN);
+
+                        // If new entry belongs to prev page
+                        if ($scope['pgupLast'] && $this->id == array_shift($idA)) {
+
+                            // Make sure pgupLast-entry will be appended -
+                            $byChannel[$channel][$context]['entry'] = $scope['pgupLast'];
+
+                            // - Appended to the top of current page
+                            $byChannel[$channel][$context]['inserted'] = 0;
+
+                            // Push current entry ID to the beginning of `entries` column of `realtime` entry
+                            $entries = ar($realtimeR->entries); array_unshift($entries, $scope['pgupLast']);
+
+                            //
+                            $scope['pgupLast'] = Indi::db()->query('
+                                SELECT `id` FROM `' . $this->_table . '` 
+                                ORDER BY ' . im($scope['ORDER'], ', ') . ' 
+                                LIMIT ' . ($scope['rowsOnPage'] * ($scope['page'] - 1) - 1) . ', 1
+                            ')->fetchColumn();
+
+                        // Else if total number of entries is more than rowsOnPage
+                        } else if (count($idA) > $scope['rowsOnPage'])
+
+                            // If new entry is the last entry - it means that it is needless
+                            // entry of current page and belongs to next page
+                            if ($this->id == array_pop($idA)) $byChannel[$channel][$context]['inserted'] = 'next';
+
+                            // Otherwise detect position index at that it should be inserted at current page, so that
+                            // the record, that is currently last on current page will be pushed out to next page
+                            else {
+
+                                // Detect position
+                                $byChannel[$channel][$context]['inserted'] = array_flip($idA)[$this->id];
+
+                                // Push current entry ID to `entries` column of `realtime` entry
+                                $entries = ar($realtimeR->entries); array_splice($entries, $byChannel[$channel][$context]['inserted'], 0, $this->id);
+                            }
+
+                        // Else it total number of entries on current page is less or equal than the rowsOnPage
+                        else {
+
+                            // Detect the insertion index
+                            $byChannel[$channel][$context]['inserted'] = array_flip($idA)[$this->id];
+
+                            // Push current entry ID to `entries` column of `realtime` entry
+                            $entries = ar($realtimeR->entries); array_push($entries, $this->id);
+                        }
+
+                    // Else if there is not yet entries on current page
+                    // it means that we're on 1st page and it's empty
+                    } else {
+
+                        // So set the insertion index for new entry to be at the top
+                        $byChannel[$channel][$context]['inserted'] = 0;
+
+                        // Push current entry ID to `entries` column of `realtime` entry
+                        $entries = ar($realtimeR->entries); array_push($entries, $this->id);
+                    }
+                }
+
+                // If $entries is modified
+                if ($entries !== false) {
+
+                    // If count of IDs in $entries became greater than rowsOnPage after that - remove the last
+                    if (count($entries) > $scope['rowsOnPage']) array_pop($entries);
+
+                    // Update `entries` and `scope` props of `realtime` entry
+                    $realtimeR->assign([
+                        'entries' => im($entries),
+                        'scope' => json_encode($scope, JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT)
+                    ])->basicUpdate();
+                }
             }
         }
 

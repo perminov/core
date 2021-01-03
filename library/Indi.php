@@ -68,6 +68,11 @@ class Indi {
     public static $answer = array();
 
     /**
+     * @var null
+     */
+    protected static $_ws = null;
+
+    /**
      * Regular expressions patterns for common usage
      *
      * @var array
@@ -2494,35 +2499,38 @@ class Indi {
      */
     public static function ws(array $data) {
 
-        // If websockets is not enabled - return
-        if (!Indi::ini('ws')->enabled) return;
+        if (!self::$_ws)  {
 
-        // If websockets server is not running - return
-        //ob_start(); file_get_contents(Indi::ini('ws')->socket); if (ob_get_clean()) return;
+            // If websockets is not enabled - return
+            if (!Indi::ini('ws')->enabled) return;
 
-        // Build path
-        $path = str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT) .'/' . grs(8) . '/websocket';
+            // If websockets server is not running - return
+            //ob_start(); file_get_contents(Indi::ini('ws')->socket); if (ob_get_clean()) return;
 
-        // Protocol
-        $prot = is_file(DOC . STD . '/core/application/ws.pem') ? 'wss' : 'ws';
+            // Build path
+            $path = str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT) .'/' . grs(8) . '/websocket';
 
-        // Try send websocket-message
-        try {
+            // Protocol
+            $prot = is_file(DOC . STD . '/core/application/ws.pem') ? 'wss' : 'ws';
 
-            // Log
-            if (Indi::ini('ws')->log) wsmsglog($data, $data['row'] . '.evt');
+            // Try send websocket-message
+            try {
 
-            // Create client
-            $client = new WsClient($prot . '://' . Indi::ini('ws')->socket . ':' . Indi::ini('ws')->port . '/' . $path);
+                // Log
+                if (Indi::ini('ws')->log) wsmsglog($data, $data['row'] . '.evt');
 
-            // Send message
-            $client->send(json_encode($data));
+                // Create client
+                self::$_ws = new WsClient($prot . '://' . Indi::ini('ws')->socket . ':' . Indi::ini('ws')->port . '/' . $path);
 
-            // Close client
-            $client->close();
+                // Catch exception
+            } catch (Exception $e) { wslog($e->getMessage()); }
+        }
 
-        // Catch exception
-        } catch (Exception $e) { wslog($e->getMessage()); }
+        // Send message
+        if (self::$_ws) self::$_ws->send(json_encode($data));
+
+        // Close client
+        //$client->close();
     }
 
     /**

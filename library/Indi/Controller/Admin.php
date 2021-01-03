@@ -193,21 +193,28 @@ class Indi_Controller_Admin extends Indi_Controller {
                     // Get final ORDER clause, built regarding column name and sorting direction
                     $finalORDER = $this->finalORDER($finalWHERE, Indi::get()->sort);
 
+                    // Build fetch method name
+                    $fetchMethod = t()->model->treeColumn() && !$this->actionCfg['misc']['index']['ignoreTreeColumn']
+                        ? 'fetchTree'
+                        : 'fetchAll';
+
                     // If $_GET['affected'] given
-                    if ($affectedOrInserted = (int) Indi::get('affected') ?: (int) Indi::get('inserted')) {
+                    if ($affected = (int) Indi::get('affected')) {
 
                         // Fetch rowset consisting of only single row
-                        $this->rowset = Indi::trail()->model->{
-                        'fetch'. (Indi::trail()->model->treeColumn() && !$this->actionCfg['misc']['index']['ignoreTreeColumn'] ? 'Tree' : 'All')
-                        }('`id` = "' . $affectedOrInserted . '"' . rif($finalWHERE, ' AND ($1)'), $finalORDER);
+                        $this->rowset = Indi::trail()->model->{$fetchMethod}('`id` = "' . $affected . '"' . rif($finalWHERE, ' AND ($1)'), $finalORDER);
+
+                    // If $_GET['inserted'] given
+                    } else if ($inserted = (int) Indi::get('inserted')) {
+
+                        // Fetch rowset consisting of only single row
+                        $this->rowset = Indi::trail()->model->{$fetchMethod}('`id` = "' . $inserted . '"' . rif($finalWHERE, ' AND ($1)'), $finalORDER);
 
                     // Else if $_GET['indexed'] given
                     } else if ($indexed = (int) Indi::get('indexed')) {
 
                         // Fetch rowset consisting of only single row
-                        $this->rowset = t()->model->{
-                        'fetch'. (t()->model->treeColumn() && !$this->actionCfg['misc']['index']['ignoreTreeColumn'] ? 'Tree' : 'All')
-                        }(t()->scope->WHERE, t()->scope->ORDER, 1, null, $indexed);
+                        $this->rowset = t()->model->{$fetchMethod}(t()->scope->WHERE, t()->scope->ORDER, 1, null, $indexed);
 
                     // Else behave in an standard way
                     } else {
@@ -217,11 +224,12 @@ class Indi_Controller_Admin extends Indi_Controller {
 
                             // Get the rowset, fetched using WHERE and ORDER clauses, and with built LIMIT clause,
                             // constructed with usage of Indi::get('limit') and Indi::get('page') params
-                            $this->rowset = Indi::trail()->model->{
-                            'fetch' . (Indi::trail()->model->treeColumn() && !$this->actionCfg['misc']['index']['ignoreTreeColumn'] ? 'Tree' : 'All')
-                            }($finalWHERE, $finalORDER,
+                            $this->rowset = Indi::trail()->model->{$fetchMethod}($finalWHERE, $finalORDER,
                                 $limit = Indi::uri()->format == 'json' || !Indi::uri()->format ? (int)Indi::get('limit') : null,
-                                $page = Indi::uri()->format == 'json' || !Indi::uri()->format ? (int)Indi::get('page') : null);
+                                $page = Indi::uri()->format == 'json' || !Indi::uri()->format ? (int)Indi::get('page') : null,
+                                null,
+                                null,
+                                $fetchMethod == 'fetchAll');
 
                             // If we're at 2nd or further page, but no results - try to detect new prev page
                             $shift = $limit && $page > 1 && !$this->rowset->count() && ($found = $this->rowset->found()) ? ceil($found / $limit) : 0;
@@ -233,7 +241,8 @@ class Indi_Controller_Admin extends Indi_Controller {
                         $scope = [
                             'primary' => $primaryWHERE, 'filters' => Indi::get()->search, 'keyword' => Indi::get()->keyword,
                             'order' => Indi::get()->sort, 'page' => Indi::get()->page, 'found' => $this->rowset->found(),
-                            'WHERE' => $finalWHERE, 'ORDER' => $finalORDER, 'hash' => Indi::trail()->section->primaryHash
+                            'WHERE' => $finalWHERE, 'ORDER' => $finalORDER, 'hash' => t()->section->primaryHash,
+                            'pgupLast' => $this->rowset->pgupLast()->id, 'rowsOnPage' => t()->section->rowsOnPage
                         ];
 
                         // Track involved entries
@@ -243,7 +252,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                             '`realtimeId` = "' . m('realtime')->fetchRow('`token` = "' . CID . '"')->id . '"'
                         ]) ?: t()->context()) $_->assign([
                             'entries' => $this->rowset->column('id', ','),
-                            'scope' => json_encode($scope)
+                            'scope' => json_encode($scope, JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT)
                         ])->save();
 
                         /**
