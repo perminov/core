@@ -715,11 +715,11 @@ class Indi_Db_Table_Row implements ArrayAccess
             '`entityId` = "' . $this->model()->id() . '"',
         ];
 
-        // If $event is 'affected' or 'deleted' - append clause for `fields` column
-        if (in($event, 'affected,deleted')) $where []= 'CONCAT(",", `entries`, ",") REGEXP ",(' . $this->id . '),"';
-
         // If $event is  'affected'
         if ($event == 'affected') {
+
+            // Append clause for `entries` column
+            $where []= 'CONCAT(",", `entries`, ",") REGEXP ",(' . $this->id . '),"';
 
             // If no fields affected - return
             if (!$fieldIdA_affected = $this->field(array_keys($this->_affected))->column('id')) return;
@@ -768,18 +768,95 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Else if $event is 'deleted'
             } else if ($event == 'deleted') {
 
-                // Prepare blank data and group it by channel and context
-                $byChannel[$channel][$context] = [
-                    'table' => $this->_table,
-                    'entry' => $this->id,
-                    'deleted' => true
-                ];
+                // Get scope
+                $scope = json_decode($realtimeR->scope, true); $entries = false;
 
-                // Drop current entry ID from `entries` column of `realtime` entry
-                $realtimeR->drop('entries', $this->id);
+                // If deleted entry is on current page
+                if (in($this->id, $realtimeR->entries)) {
 
-                // Update `realtime` entry
-                $realtimeR->basicUpdate();
+                    // If there is at least 1 next page exists
+                    // Detect ID of entry that will be shifted from next page's first to current page's last
+                    if ($scope['page'] * $scope['rowsOnPage'] < $scope['found'])
+                        $realtimeR->push('entries', $byChannel[$channel][$context]['deleted'] = (int) Indi::db()->query('
+                            SELECT `id` FROM `' . $this->_table . '` 
+                            WHERE ' . ($scope['WHERE'] ?: 'TRUE') . ' 
+                            ORDER BY ' . im($scope['ORDER'], ', ') . ' 
+                            LIMIT ' . ($scope['rowsOnPage'] * $scope['page']) . ', 1
+                        ')->fetchColumn());
+
+                    // Else if it's the last page - do nothing
+                    else $byChannel[$channel][$context]['deleted'] = 'this';
+
+                    // Prepare data and group it by channel and context
+                    $byChannel[$channel][$context] += [
+                        'table' => $this->_table,
+                        'entry' => $this->id
+                    ];
+
+                    // Decrement found
+                    $scope['found'] --;
+
+                    // Update scope
+                    $realtimeR->scope = json_encode($scope, JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT);
+
+                    // Drop current entry ID from `entries` column of `realtime` entry
+                    $realtimeR->drop('entries', $this->id);
+
+                    // Update `realtime` entry
+                    $realtimeR->basicUpdate();
+
+                // Else if deleted
+                } else if (!$scope['WHERE'] || Indi::db()->query($sql = '
+                    SELECT `id` FROM `' . $this->_table . '` WHERE `id` = "' . $this->id . '" AND (' . $scope['WHERE'] . ')'
+                )->fetchColumn()) {
+
+                    // Push current entry ID to the beginning of `entries` column of `realtime` entry
+                    $entries = ar($realtimeR->entries); $first = $entries[0]; $last = $entries[count($entries) - 1];
+
+                    // Get the ordered IDs: deleted, first on current page, and last on current page
+                    $idA = Indi::db()->query($sql = '
+                        SELECT `id` FROM `' . $this->_table . '`
+                        WHERE `id` IN (' . rif($first, '$1,') . rif($last, '$1,') .  $this->id . ')
+                        ORDER BY ' . im($scope['ORDER'], ', ') . '
+                    ')->fetchAll(PDO::FETCH_COLUMN);
+
+                    // If deleted entry ID is above the others, it means it belongs to the one of prev pages
+                    if ($this->id == array_shift($idA)) {
+
+                        // Remove first from $entries to set it as new scope's pgupLast
+                        $scope['pgupLast'] = $first; $realtimeR->drop('entries', $first);
+
+                        // If there is at least 1 next page exists
+                        // Detect ID of entry that will be shifted from next page's first to current page's last
+                        if ($scope['page'] * $scope['rowsOnPage'] < $scope['found'])
+                            $realtimeR->push('entries', $byChannel[$channel][$context]['deleted'] = (int) Indi::db()->query('
+                                SELECT `id` FROM `' . $this->_table . '` 
+                                WHERE ' . ($scope['WHERE'] ?: 'TRUE') . ' 
+                                ORDER BY ' . im($scope['ORDER'], ', ') . ' 
+                                LIMIT ' . ($scope['rowsOnPage'] * $scope['page']) . ', 1
+                            ')->fetchColumn());
+
+                        // Else if it's the last page
+                        else $byChannel[$channel][$context]['deleted'] = 'prev';
+
+                    // Else if deleted entry ID is below the others, it means it belongs to the one of next pages
+                    } else if ($this->id == array_pop($idA)) $byChannel[$channel][$context]['deleted'] = 'next';
+
+                    // Prepare data and group it by channel and context
+                    $byChannel[$channel][$context] += [
+                        'table' => $this->_table,
+                        'entry' => $this->id
+                    ];
+
+                    // Decrement found
+                    $scope['found'] --;
+
+                    // Update scope
+                    $realtimeR->scope = json_encode($scope, JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT);
+
+                    // Update `realtime` entry
+                    $realtimeR->basicUpdate();
+                }
 
             // Else if $event is 'inserted'
             } else if ($event == 'inserted') {
@@ -824,6 +901,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                             //
                             $scope['pgupLast'] = Indi::db()->query('
                                 SELECT `id` FROM `' . $this->_table . '` 
+                                WHERE ' . ($scope['WHERE'] ?: 'TRUE') . ' 
                                 ORDER BY ' . im($scope['ORDER'], ', ') . ' 
                                 LIMIT ' . ($scope['rowsOnPage'] * ($scope['page'] - 1) - 1) . ', 1
                             ')->fetchColumn();
@@ -866,19 +944,25 @@ class Indi_Db_Table_Row implements ArrayAccess
                         // Push current entry ID to `entries` column of `realtime` entry
                         $entries = ar($realtimeR->entries); array_push($entries, $this->id);
                     }
-                }
 
-                // If $entries is modified
-                if ($entries !== false) {
+                    // Increment scope's 'found' prop
+                    $scope['found'] ++;
 
-                    // If count of IDs in $entries became greater than rowsOnPage after that - remove the last
-                    if (count($entries) > $scope['rowsOnPage']) array_pop($entries);
+                    // Data to update `realtime` entry with
+                    $data = ['scope' => json_encode($scope, JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT)];
 
-                    // Update `entries` and `scope` props of `realtime` entry
-                    $realtimeR->assign([
-                        'entries' => im($entries),
-                        'scope' => json_encode($scope, JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT)
-                    ])->basicUpdate();
+                    // If $entries is modified
+                    if ($entries !== false) {
+
+                        // If count of IDs in $entries became greater than rowsOnPage after that - remove the last
+                        if (count($entries) > $scope['rowsOnPage']) array_pop($entries);
+
+                        // Setup 'entries' prop
+                        $data['entries'] = im($entries);
+                    }
+
+                    // Update `realtime` entry
+                    $realtimeR->assign($data)->basicUpdate();
                 }
             }
         }
@@ -1454,6 +1538,9 @@ class Indi_Db_Table_Row implements ArrayAccess
         // or row has dependent rowsets
         $this->deleteUsages();
 
+        // Notify UI-users
+        $this->realtime('deleted');
+
         // Standard deletion
         $return = $this->model()->delete('`id` = "' . $this->_original['id'] . '"');
 
@@ -1468,9 +1555,6 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Do some custom things
         $this->onDelete();
-
-        // Notify UI-users
-        $this->realtime('deleted');
 
         // Unset `id` prop
         $this->id = null;

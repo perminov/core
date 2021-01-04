@@ -793,10 +793,8 @@ class Indi_Controller {
                 $this->renderGridDataItem($item, $r);
             }
 
-            // Flush affected/inserted/indexed
-            if ($affected = (int) Indi::get('affected')) jflush(true, ['affected' => array_pop($data)]);
-            else if ($inserted = (int) Indi::get('inserted')) jflush(true,  ['inserted' => array_pop($data)]);
-            else if ($indexed = (int) Indi::get('indexed')) jflush(true,  ['indexed' => array_pop($data)]);
+            // If $_GET['required'] given - Flush required entry
+            if ($required = (int) Indi::get('required')) jflush(true,  ['required' => array_pop($data)]);
 
             // Else if data is gonna be used in the excel spreadsheet building process, pass it to a special function
             if (in(Indi::uri('format'), 'excel,pdf')) $this->export($data, Indi::uri('format'));

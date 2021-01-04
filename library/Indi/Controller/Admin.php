@@ -198,23 +198,11 @@ class Indi_Controller_Admin extends Indi_Controller {
                         ? 'fetchTree'
                         : 'fetchAll';
 
-                    // If $_GET['affected'] given
-                    if ($affected = (int) Indi::get('affected')) {
+                    // Else if $_GET['required'] given
+                    if ($required = (int) Indi::get('required')) {
 
                         // Fetch rowset consisting of only single row
-                        $this->rowset = Indi::trail()->model->{$fetchMethod}('`id` = "' . $affected . '"' . rif($finalWHERE, ' AND ($1)'), $finalORDER);
-
-                    // If $_GET['inserted'] given
-                    } else if ($inserted = (int) Indi::get('inserted')) {
-
-                        // Fetch rowset consisting of only single row
-                        $this->rowset = Indi::trail()->model->{$fetchMethod}('`id` = "' . $inserted . '"' . rif($finalWHERE, ' AND ($1)'), $finalORDER);
-
-                    // Else if $_GET['indexed'] given
-                    } else if ($indexed = (int) Indi::get('indexed')) {
-
-                        // Fetch rowset consisting of only single row
-                        $this->rowset = t()->model->{$fetchMethod}(t()->scope->WHERE, t()->scope->ORDER, 1, null, $indexed);
+                        $this->rowset = Indi::trail()->model->{$fetchMethod}('`id` = "' . $required . '"' . rif($finalWHERE, ' AND ($1)'));
 
                     // Else behave in an standard way
                     } else {
