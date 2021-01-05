@@ -771,6 +771,9 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // Get scope
                 $scope = json_decode($realtimeR->scope, true); $entries = false;
 
+                // Get ORDER
+                $order = $scope['ORDER'] ? im($scope['ORDER'], ', ') : '';
+
                 // If deleted entry is on current page
                 if (in($this->id, $realtimeR->entries)) {
 
@@ -780,7 +783,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                         $realtimeR->push('entries', $byChannel[$channel][$context]['deleted'] = (int) Indi::db()->query('
                             SELECT `id` FROM `' . $this->_table . '` 
                             WHERE ' . ($scope['WHERE'] ?: 'TRUE') . ' 
-                            ORDER BY ' . im($scope['ORDER'], ', ') . ' 
+                            ' . rif($order, 'ORDER BY $1') . ' 
                             LIMIT ' . ($scope['rowsOnPage'] * $scope['page']) . ', 1
                         ')->fetchColumn());
 
@@ -817,7 +820,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     $idA = Indi::db()->query($sql = '
                         SELECT `id` FROM `' . $this->_table . '`
                         WHERE `id` IN (' . rif($first, '$1,') . rif($last, '$1,') .  $this->id . ')
-                        ORDER BY ' . im($scope['ORDER'], ', ') . '
+                        ' . rif($order, 'ORDER BY $1') . ' 
                     ')->fetchAll(PDO::FETCH_COLUMN);
 
                     // If deleted entry ID is above the others, it means it belongs to the one of prev pages
@@ -832,7 +835,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                             $realtimeR->push('entries', $byChannel[$channel][$context]['deleted'] = (int) Indi::db()->query('
                                 SELECT `id` FROM `' . $this->_table . '` 
                                 WHERE ' . ($scope['WHERE'] ?: 'TRUE') . ' 
-                                ORDER BY ' . im($scope['ORDER'], ', ') . ' 
+                                ' . rif($order, 'ORDER BY $1') . ' 
                                 LIMIT ' . ($scope['rowsOnPage'] * $scope['page']) . ', 1
                             ')->fetchColumn());
 
@@ -864,7 +867,10 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // Get scope
                 $scope = json_decode($realtimeR->scope, true); $entries = false;
 
-                //
+                // Get ORDER
+                $order = $scope['ORDER'] ? im($scope['ORDER'], ', ') : '';
+
+                // Check whether inserted row match scope's WHERE clause
                 if (!$scope['WHERE'] || Indi::db()->query($sql = '
                     SELECT `id` FROM `' . $this->_table . '` WHERE `id` = "' . $this->id . '" AND (' . $scope['WHERE'] . ')'
                 )->fetchColumn()) {
@@ -883,7 +889,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                         $idA = Indi::db()->query($sql = '
                             SELECT `id` FROM `' . $this->_table . '`
                             WHERE `id` IN (' . rif($scope['pgupLast'], '$1,') . rif($realtimeR->entries, '$1,') .  $this->id . ')
-                            ORDER BY ' . im($scope['ORDER'], ', ') . '
+                            ' . rif($order, 'ORDER BY $1') . ' 
                         ')->fetchAll(PDO::FETCH_COLUMN);
 
                         // If new entry belongs to prev page
@@ -902,7 +908,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                             $scope['pgupLast'] = Indi::db()->query('
                                 SELECT `id` FROM `' . $this->_table . '` 
                                 WHERE ' . ($scope['WHERE'] ?: 'TRUE') . ' 
-                                ORDER BY ' . im($scope['ORDER'], ', ') . ' 
+                                ' . rif($order, 'ORDER BY $1') . ' 
                                 LIMIT ' . ($scope['rowsOnPage'] * ($scope['page'] - 1) - 1) . ', 1
                             ')->fetchColumn();
 
