@@ -204,13 +204,13 @@ while (true) {
     foreach($listenA as $clientI) {
 
         // Read data
-        $data = fread($clientI, 100000);
+        $binary = fread($clientI, 10000);
 
         // Get stream index
         $index = array_search($clientI, $clientA);
 
         // If no data
-        if (!$data) {
+        if (!$binary) {
 
             // Close client's current stream
             fclose($clientI);
@@ -246,82 +246,73 @@ while (true) {
             continue;
         }
 
-        // Log that channel was closed
-        if ($ini['log']) file_put_contents('ws.' . getmypid() . '.data',
-            date('Y-m-d H:i:s') . ' => chl:' . $index . ', raw:' . print_r($data, true) . "\n", FILE_APPEND);
+        // Log
+        echo '--fread--' . "\n";
+        echo $log = date('Y-m-d H:i:s') . ' => chl:' . $index . ', len: ' . strlen($binary) . ', raw:' . $binary . "\n";
+        if ($ini['log']) file_put_contents('ws.' . getmypid() . '.data', $log, FILE_APPEND);
 
-        // Decode data
-        $data = decode($data);
+        //
+        do {
 
-        // Log that channel was closed
-        if ($ini['log']) file_put_contents('ws.' . getmypid() . '.data',
-            date('Y-m-d H:i:s') . ' => chl:' . $index . ', obj:' . print_r($data, true) . "\n", FILE_APPEND);
+            // Decode data
+            list($data, $binary) = decode($binary);
 
-        // Here we skip messages having 'type' not 'text'
-        if ($data['type'] != 'text') continue;
+            // Log that channel was closed
+            if ($ini['log']) file_put_contents('ws.' . getmypid() . '.data',
+                date('Y-m-d H:i:s') . ' => chl:' . $index . ', obj:' . print_r($data, true) . "\n", FILE_APPEND);
 
-        // Convert json-decoded payload into an array
-        $data = json_decode($data['payload'], true);
+            // Here we skip messages having 'type' not 'text'
+            if ($data['type'] != 'text') continue 2;
 
-        // If some user connected
-        if ($data['type'] == 'open') {
+            // Convert json-decoded payload into an array
+            $data = json_decode($data['payload'], true);
 
-            // Get user's role id and self id
-            list($rid, $uid) = explode('-', $data['uid']);
+            // If some user connected
+            if ($data['type'] == 'open') {
 
-            // Organize channels
-            if (!is_array($channelA[$rid])) $channelA[$rid] = array();
-            if (!is_array($channelA[$rid][$uid])) $channelA[$rid][$uid] = array();
-            $channelA[$rid][$uid][$index] = $index;
+                // Get user's role id and self id
+                list($rid, $uid) = explode('-', $data['uid']);
 
-            // Log that channel was opened
-            if ($ini['log']) file_put_contents('ws.chl',
-                date('Y-m-d H:i:s') . ' => open: ' . $data['uid'] . '-' . $index . "\n", FILE_APPEND);
+                // Organize channels
+                if (!is_array($channelA[$rid])) $channelA[$rid] = array();
+                if (!is_array($channelA[$rid][$uid])) $channelA[$rid][$uid] = array();
+                $channelA[$rid][$uid][$index] = $index;
 
-            // Write message into channel
-            fwrite($clientA[$channelA[$rid][$uid][$index]], encode(json_encode(array('type' => 'opened', 'cid' => $index))));
+                // Log that channel was opened
+                if ($ini['log']) file_put_contents('ws.chl',
+                    date('Y-m-d H:i:s') . ' => open: ' . $data['uid'] . '-' . $index . "\n", FILE_APPEND);
 
-        // Else if previously connected user pings the server
-        } else if ($data['type'] == 'ping') {
+                // Write message into channel
+                fwrite($clientA[$channelA[$rid][$uid][$index]], encode(json_encode(array('type' => 'opened', 'cid' => $index))));
 
-            // Get user's role id and self id
-            list($rid, $uid) = explode('-', $data['uid']);
+            // Else if previously connected user pings the server
+            } else if ($data['type'] == 'ping') {
 
-            // If logging is On - do log
-            if ($ini['log']) file_put_contents('ws.ping.msg', date('Y-m-d H:i:s => ') . print_r($data, true) . "\n", FILE_APPEND);
+                // Get user's role id and self id
+                list($rid, $uid) = explode('-', $data['uid']);
 
-            // Change type to 'pong'
-            $data['type'] = 'pong';
+                // If logging is On - do log
+                if ($ini['log']) file_put_contents('ws.ping.msg', date('Y-m-d H:i:s => ') . print_r($data, true) . "\n", FILE_APPEND);
 
-            // Write pong-message into channel
-            fwrite($clientA[$channelA[$rid][$uid][$data['cid']]], encode(json_encode($data)));
+                // Change type to 'pong'
+                $data['type'] = 'pong';
 
-        // Else if message type is 'notice' or 'reload'
-        } else if ($data['type'] == 'notice' || $data['type'] == 'reload') {
+                // Write pong-message into channel
+                fwrite($clientA[$channelA[$rid][$uid][$data['cid']]], encode(json_encode($data)));
 
-            // If logging is On - do log
-            if ($ini['log']) file_put_contents('ws.' . $data['row'] . '.rcv.msg', date('Y-m-d H:i:s') . ' => ' . print_r($data, true) . "\n", FILE_APPEND);
+            // Else if message type is 'notice' or 'reload'
+            } else if ($data['type'] == 'notice' || $data['type'] == 'reload') {
 
-            // Walk through roles, that recipients should have
-            // If there are channels already exist for recipients, having such role
-            foreach ($data['to'] as $rid => $uidA) if ($channelA[$rid]) {
+                // If logging is On - do log
+                if ($ini['log']) file_put_contents('ws.' . $data['row'] . '.rcv.msg', date('Y-m-d H:i:s') . ' => ' . print_r($data, true) . "\n", FILE_APPEND);
 
-                // If all recipients having such role should be messaged
-                // Send message to all recipients having such role
-                if ($data['to'][$rid] === true) foreach ($channelA[$rid] as $uid => $byrole)
-                    foreach ($channelA[$rid][$uid] as $cid) {
+                // Walk through roles, that recipients should have
+                // If there are channels already exist for recipients, having such role
+                foreach ($data['to'] as $rid => $uidA) if ($channelA[$rid]) {
 
-                        // If logging is On - do log
-                        if ($ini['log']) file_put_contents('ws.' . $data['row'] . '.snt.msg', date('Y-m-d H:i:s => ') . print_r($data + compact('rid', 'uid', 'cid'), true) . "\n", FILE_APPEND);
-
-                        // Write message into channel
-                        fwrite($clientA[$channelA[$rid][$uid][$cid]], encode(json_encode($data)));
-                    }
-
-                // Else if we have certain list of recipients
-                // Send message to certain recipients
-                else foreach ($data['to'][$rid] as $uid)
-                    if ($channelA[$rid][$uid])
+                    // If all recipients having such role should be messaged
+                    // Send message to all recipients having such role
+                    if ($data['to'][$rid] === true) foreach ($channelA[$rid] as $uid => $byrole)
                         foreach ($channelA[$rid][$uid] as $cid) {
 
                             // If logging is On - do log
@@ -330,14 +321,30 @@ while (true) {
                             // Write message into channel
                             fwrite($clientA[$channelA[$rid][$uid][$cid]], encode(json_encode($data)));
                         }
+
+                    // Else if we have certain list of recipients
+                    // Send message to certain recipients
+                    else foreach ($data['to'][$rid] as $uid)
+                        if ($channelA[$rid][$uid])
+                            foreach ($channelA[$rid][$uid] as $cid) {
+
+                                // If logging is On - do log
+                                if ($ini['log']) file_put_contents('ws.' . $data['row'] . '.snt.msg', date('Y-m-d H:i:s => ') . print_r($data + compact('rid', 'uid', 'cid'), true) . "\n", FILE_APPEND);
+
+                                // Write message into channel
+                                fwrite($clientA[$channelA[$rid][$uid][$cid]], encode(json_encode($data)));
+                            }
+                }
+
+            // Else if message type is 'realtime'
+            } else if ($data['type'] == 'realtime') {
+
+                // If recepient channel exists - write message into channel
+                if ($clientA[$data['to']]) fwrite($clientA[$data['to']], encode(json_encode($data)));
             }
 
-        // Else if message type is 'realtime'
-        } else if ($data['type'] == 'realtime') {
-
-            // If recepient channel exists - write message into channel
-            if ($clientA[$data['to']]) fwrite($clientA[$data['to']], encode(json_encode($data)));
-        }
+        // While binary data remaining
+        } while ($binary);
     }
 }
 
@@ -535,8 +542,8 @@ function decode($data) {
         if (isset($data[$i]))
             $decoded['payload'] .= $data[$i] ^ $mask[($i - $payloadOffset) % 4];
 
-    // Return decoded data
-    return $decoded;
+    // Return decoded data and remaining binary data
+    return [$decoded, substr($data, $dataLength)];
 }
 
 // Shutdown

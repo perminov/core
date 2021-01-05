@@ -2495,17 +2495,16 @@ class Indi {
     }
 
     /**
-     * Send websockets message
+     * Send websockets message via client socket, that will be auto-created if not yet exists
+     * If $data arg is `false` - socket client will be closed
      */
-    public static function ws(array $data) {
+    public static function ws($data) {
 
-        if (!self::$_ws)  {
+        // If websockets is not enabled - return
+        if (!Indi::ini('ws')->enabled) return;
 
-            // If websockets is not enabled - return
-            if (!Indi::ini('ws')->enabled) return;
-
-            // If websockets server is not running - return
-            //ob_start(); file_get_contents(Indi::ini('ws')->socket); if (ob_get_clean()) return;
+        // If client socket is not yet created
+        if (!self::$_ws && $data !== false)  {
 
             // Build path
             $path = str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT) .'/' . grs(8) . '/websocket';
@@ -2513,24 +2512,42 @@ class Indi {
             // Protocol
             $prot = is_file(DOC . STD . '/core/application/ws.pem') ? 'wss' : 'ws';
 
-            // Try send websocket-message
+            // Try create client
             try {
-
-                // Log
-                if (Indi::ini('ws')->log) wsmsglog($data, $data['row'] . '.evt');
 
                 // Create client
                 self::$_ws = new WsClient($prot . '://' . Indi::ini('ws')->socket . ':' . Indi::ini('ws')->port . '/' . $path);
 
-                // Catch exception
-            } catch (Exception $e) { wslog($e->getMessage()); }
+            // If exception caught
+            } catch (Exception $e) {
+
+                // Log it
+                wslog($e->getMessage());
+            }
         }
 
-        // Send message
-        if (self::$_ws) self::$_ws->send(json_encode($data));
+        // If client socket exists
+        if (self::$_ws) {
 
-        // Close client
-        //$client->close();
+            // If $data arg is `false`
+            if ($data === false) {
+
+                // Close channel
+                self::$_ws->close();
+
+                // Unset channel
+                self::$_ws = null;
+
+            // Else
+            } else {
+
+                // Log message
+                if (Indi::ini('ws')->log) wsmsglog($data, $data['row'] . '.evt');
+
+                // Send message
+                self::$_ws->send(json_encode($data));
+            }
+        }
     }
 
     /**

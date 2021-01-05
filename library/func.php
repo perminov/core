@@ -1052,6 +1052,9 @@ function iexit($msg = null) {
     // Send all DELETE queries to an special email address, for debugging
     Indi::mailDELETE();
 
+    // Close websocket-client connection
+    Indi::ws(false);
+
     // Exit
     exit($msg);
 }
