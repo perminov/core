@@ -217,7 +217,9 @@ class Indi_Controller_Admin extends Indi_Controller {
                                 $page = Indi::uri()->format == 'json' || !Indi::uri()->format ? (int)Indi::get('page') : null,
                                 null,
                                 null,
-                                $fetchMethod == 'fetchAll');
+                                ($fetchMethod == 'fetchAll') ?: null,
+                                false,
+                                $fetchMethod == 'fetchTree');
 
                             // If we're at 2nd or further page, but no results - try to detect new prev page
                             $shift = $limit && $page > 1 && !$this->rowset->count() && ($found = $this->rowset->found()) ? ceil($found / $limit) : 0;
@@ -230,7 +232,8 @@ class Indi_Controller_Admin extends Indi_Controller {
                             'primary' => $primaryWHERE, 'filters' => Indi::get()->search, 'keyword' => Indi::get()->keyword,
                             'order' => Indi::get()->sort, 'page' => Indi::get()->page, 'found' => $this->rowset->found(),
                             'WHERE' => $finalWHERE, 'ORDER' => $finalORDER, 'hash' => t()->section->primaryHash,
-                            'pgupLast' => $this->rowset->pgupLast()->id, 'rowsOnPage' => t()->section->rowsOnPage
+                            'pgupLast' => $this->rowset->pgupLast()->id, 'rowsOnPage' => t()->section->rowsOnPage,
+                            'tree' => $fetchMethod == 'fetchTree'
                         ];
 
                         // Track involved entries

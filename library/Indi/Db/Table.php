@@ -391,7 +391,7 @@ class Indi_Db_Table
      * @param bool $offsetDetection
      * @return Indi_Db_Table_Rowset object
      */
-    public function fetchTree($where = null, $order = null, $count = null, $page = null, $parentId = 0, $selected = 0, $keyword = null, $offsetDetection = false) {
+    public function fetchTree($where = null, $order = null, $count = null, $page = null, $parentId = 0, $selected = 0, $keyword = null, $offsetDetection = false, $pgupLast = false) {
 
         // Get raw tree
         $tree = $this->fetchRawTree($order, $where);
@@ -491,7 +491,7 @@ class Indi_Db_Table
                 }
             }
 
-            // Standard behaviour
+        // Standard behaviour
         } else {
 
             // If $selected argument is specified, we should return page of results, containing that selected branch,
@@ -612,10 +612,30 @@ class Indi_Db_Table
             }
         }
 
+        // If $pgupLast flag is true, and desired page is 2nd or more
+        if ($page > 1 && $pgupLast && count($ids)) {
+
+            // Get properly ORDER-ed ids array
+            $treeKeyA = array_keys($tree);
+
+            // Get index-of-total for first id
+            $treeIdxA = array_flip($treeKeyA);
+
+            // Get index-of-total for first id
+            $firstIdx = $treeIdxA[$ids[0]];
+
+            // If $treeKeyA array has prev item - prepend it to $ids array, else set $pgupLast to false
+            if (isset($treeKeyA[$firstIdx - 1])) array_unshift($ids, $treeKeyA[$firstIdx - 1]); else $pgupLast = false;
+
+        // Else set $pgupLast flag to false, as if it even was given as true it does make sense only if $page > 1
+        } else if ($pgupLast) $pgupLast = false;
+
         // Construct a WHERE and ORDER clauses for getting that particular
         // page of results, get it, and setup nesting level indents
         $wo = 'FIND_IN_SET(`id`, "' . implode(',', $ids) . '")';
-        $data = $this->fetchAll($wo, $wo)->toArray();
+        $rowset = $this->fetchAll($wo, $wo);
+        $sql = $rowset->query();
+        $data = $rowset->toArray();
         $assocDataA = array();
         for ($i = 0; $i < count($data); $i++) {
             $assocDataI = $data[$i];
@@ -649,7 +669,9 @@ class Indi_Db_Table
             'data' => array_values($data),
             'rowClass' => $this->_rowClass,
             'found' => $found,
-            'page' => $page
+            'page' => $page,
+            'pgupLast' => $pgupLast,
+            'query' => $sql
         );
 
         // Return rowset/offset

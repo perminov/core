@@ -49,12 +49,52 @@ class Admin_RealtimeController extends Indi_Controller_Admin {
     }
 
     /**
-     * Append role title to admin title
+     * Explicitly notify about insertion, because the fact that entry had empty title
+     * means that it was created via ws.php, so ->realtime('inserted') was not called
+     */
+    public function preDispatch() {
+
+        // If $_GET['newtab'] exists
+        if (array_key_exists('newtab', Indi::get())) {
+
+            // Forech `realtime` entry having empty `title`
+            foreach (m('Realtime')->fetchAll('`title` = ""') as $realtimeR) {
+
+                // Force `title` to be set
+                $realtimeR->save();
+
+                // Explicitly notify about insertion, because the fact that entry had empty title
+                // means that it was created via ws.php, so ->realtime('inserted') was not called
+                $realtimeR->realtime('inserted');
+            }
+
+            // Flush success
+            jflush(true);
+        }
+
+        // Call parent
+        parent::preDispatch();
+    }
+
+    /**
+     * Append role title to admin title, and highlight tokens
      *
      * @param $item
      * @param $r
      */
     public function renderGridDataItem(&$item, $r) {
+
+        // Append role title to admin title
         $item['adminId'] .= ' [' .  $item['profileId'] . ']';
+
+        // Highlight session token
+        if ($item['token'] == $_COOKIE['PHPSESSID'])
+            $item['_render']['title']
+                = preg_replace('~( - )(.*?)(, )~', '$1<span style="color: #35baf6;">$2</span>$3', $item['_render']['title']);
+
+        // Highlight channel/tab token
+        else if ($item['token'] == CID)
+            $item['_render']['title']
+                = preg_replace('~( - )(.*?)$~', '$1<span style="color: #35baf6;">$2</span>', $item['_render']['title']);
     }
 }

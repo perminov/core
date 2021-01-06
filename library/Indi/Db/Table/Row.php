@@ -707,7 +707,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         if (!Indi::ini('ws')->enabled || !Indi::ini('ws')->realtime) return;
 
         // Temporarily ignore modifications for `realtime` and `queue*` entries
-        if (preg_match('~(realtime|queue)~', $this->_table)) return;
+        if (preg_match('~(queue)~', $this->_table)) return;
 
         // Start building WHERE clause
         $where = [
@@ -771,8 +771,20 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // Get scope
                 $scope = json_decode($realtimeR->scope, true); $entries = false;
 
-                // Get ORDER
-                $order = $scope['ORDER'] ? im($scope['ORDER'], ', ') : '';
+                // If scope's tree-flag is true
+                if ($scope['tree']) {
+
+                    // Get raw tree
+                    $tree = $this->model()->fetchRawTree($scope['ORDER'], $scope['WHERE']);
+
+                    // Pick tree if need
+                    if ($scope['WHERE']) $tree = $tree['tree'];
+
+                    // Build ORDER clause, respecting the tree
+                    $order = 'FIND_IN_SET(`id`, "' . im(array_keys($tree)) . '")';
+
+                    // Else build ORDER clause using ordinary approach
+                } else $order = $scope['ORDER'] ? im($scope['ORDER'], ', ') : '';
 
                 // If deleted entry is on current page
                 if (in($this->id, $realtimeR->entries)) {
@@ -867,8 +879,20 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // Get scope
                 $scope = json_decode($realtimeR->scope, true); $entries = false;
 
-                // Get ORDER
-                $order = $scope['ORDER'] ? im($scope['ORDER'], ', ') : '';
+                // If scope's tree-flag is true
+                if ($scope['tree']) {
+
+                    // Get raw tree
+                    $tree = $this->model()->fetchRawTree($scope['ORDER'], $scope['WHERE']);
+
+                    // Pick tree if need
+                    if ($scope['WHERE']) $tree = $tree['tree'];
+
+                    // Build ORDER clause, respecting the tree
+                    $order = 'FIND_IN_SET(`id`, "' . im(array_keys($tree)) . '")';
+
+                // Else build ORDER clause using ordinary approach
+                } else $order = $scope['ORDER'] ? im($scope['ORDER'], ', ') : '';
 
                 // Check whether inserted row match scope's WHERE clause
                 if (!$scope['WHERE'] || Indi::db()->query($sql = '
