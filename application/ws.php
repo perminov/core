@@ -224,14 +224,14 @@ while (true) {
                         unset($channelA[$rid][$uid][$index]);
 
                         // Try to find `realtime` representing the channel
-                        if ($channel = $db->rget('realtime', '`type` = "channel" AND `token` = "' . $index . '"')) {
+                        /*if ($channel = $db->rget('realtime', '`type` = "channel" AND `token` = "' . $index . '"')) {
 
                             // Delete channel's contexts
                             $db->query('DELETE FROM `realtime` WHERE `type` = "context" AND `realtimeId` = "' . $channel['id'] . '"');
 
                             // Delete channel itself
                             $db->query('DELETE FROM `realtime` WHERE `id` = "' . $channel['id'] . '"');
-                        }
+                        }*/
 
                         // Log that channel was closed
                         if ($ini['log']) file_put_contents('ws.chl',

@@ -33,4 +33,13 @@ class Realtime_Row extends Indi_Db_Table_Row {
                 if (!$parent->title)
                     $parent->setTitle()->basicUpdate();
     }
+
+    /**
+     * Delete parent `realtime` entry (session-entry) if this was the last remaining tab/channel
+     */
+    public function onDelete() {
+        if ($this->type == 'channel')
+            if (!$this->model()->fetchRow(['`type` = "channel"', '`realtimeId` = "' . $this->realtimeId . '"']))
+                $this->foreign('realtimeId')->delete();
+    }
 }

@@ -57,19 +57,44 @@ class Admin_RealtimeController extends Indi_Controller_Admin {
         // If $_GET['newtab'] exists
         if (array_key_exists('newtab', Indi::get())) {
 
-            // Forech `realtime` entry having empty `title`
-            foreach (m('Realtime')->fetchAll('`title` = ""') as $realtimeR) {
+            // Check CID
+            jcheck(['cid' => ['req' => true, 'rex' => 'wskey']], ['cid' => CID]);
+
+            // Try to found `realtime` entry having such CID and `type` = 'channel'
+            if ($r = m('Realtime')->fetchRow(['`token` = "' . CID . '"', '`type` = "channel"'])) {
 
                 // Force `title` to be set
-                $realtimeR->save();
+                $r->save();
 
                 // Explicitly notify about insertion, because the fact that entry had empty title
                 // means that it was created via ws.php, so ->realtime('inserted') was not called
-                $realtimeR->realtime('inserted');
+                $r->realtime('inserted');
+
+                // Flush success
+                jflush(true);
             }
 
-            // Flush success
-            jflush(true);
+            // Flush failure
+            jflush(false);
+
+        // Else if $_GET['closetab'] exists
+        } else if (array_key_exists('closetab', Indi::get())) {
+
+            // Check CID
+            jcheck(['cid' => ['req' => true, 'rex' => 'wskey']], ['cid' => CID]);
+
+            // Try to found `realtime` entry having such CID and `type` = 'channel'
+            if ($r = m('Realtime')->fetchRow(['`token` = "' . CID . '"', '`type` = "channel"'])) {
+
+                // Delete
+                $r->delete();
+
+                // Flush success
+                jflush(true);
+            }
+
+            // Flush failure
+            jflush(false);
         }
 
         // Call parent

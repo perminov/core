@@ -1,5 +1,197 @@
 <?php
 class Indi_Controller_Migrate extends Indi_Controller {
+    public function realtimeAction() {
+        entity('realtime', array (
+            'title' => 'Рилтайм',
+            'system' => 'y',
+        ));
+        field('realtime', 'realtimeId', array (
+            'title' => 'Родительская запись',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'defaultValue' => '0',
+            'relation' => 'realtime',
+            'storeRelationAbility' => 'one',
+        ));
+        field('realtime', 'type', array (
+            'title' => 'Тип',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'session',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+        ));
+        enumset('realtime', 'type', 'session', array('title' => 'Сессия'));
+        enumset('realtime', 'type', 'channel', array('title' => 'Вкладка'));
+        enumset('realtime', 'type', 'context', array('title' => 'Контекст'));
+        field('realtime', 'profileId', array (
+            'title' => 'Роль',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'defaultValue' => '0',
+            'relation' => 'profile',
+            'storeRelationAbility' => 'one',
+        ));
+        field('realtime', 'adminId', array (
+            'title' => 'Пользователь',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'defaultValue' => '0',
+            'storeRelationAbility' => 'one',
+        ));
+        consider('realtime', 'adminId', 'profileId', array (
+            'foreign' => 'entityId',
+            'required' => 'y',
+        ));
+        field('realtime', 'token', array (
+            'title' => 'Токен',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'string',
+        ));
+        field('realtime', 'spaceSince', array (
+            'title' => 'Начало',
+            'columnTypeId' => 'DATETIME',
+            'elementId' => 'datetime',
+            'defaultValue' => '<?=date(\'Y-m-d H:i:s\')?>',
+        ));
+        param('realtime', 'spaceSince', 'displayTimeFormat', 'H:i:s');
+        param('realtime', 'spaceSince', 'displayDateFormat', 'Y-m-d');
+        field('realtime', 'spaceUntil', array (
+            'title' => 'Конец',
+            'columnTypeId' => 'DATETIME',
+            'elementId' => 'datetime',
+            'defaultValue' => '0000-00-00 00:00:00',
+        ));
+        field('realtime', 'spaceFrame', array (
+            'title' => 'Длительность',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'number',
+            'defaultValue' => '0',
+        ));
+        field('realtime', 'langId', array (
+            'title' => 'Язык',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'defaultValue' => '0',
+            'relation' => 'lang',
+            'storeRelationAbility' => 'one',
+        ));
+        field('realtime', 'sectionId', array (
+            'title' => 'Раздел',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'defaultValue' => '0',
+            'relation' => 'section',
+            'storeRelationAbility' => 'one',
+        ));
+        field('realtime', 'entityId', array (
+            'title' => 'Сущность',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'defaultValue' => '0',
+            'relation' => 'entity',
+            'storeRelationAbility' => 'one',
+        ));
+        field('realtime', 'entries', array (
+            'title' => 'Записи',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'combo',
+            'storeRelationAbility' => 'many',
+        ));
+        consider('realtime', 'entries', 'sectionId', array (
+            'foreign' => 'entityId',
+            'required' => 'y',
+        ));
+        field('realtime', 'fields', array (
+            'title' => 'Поля',
+            'columnTypeId' => 'TEXT',
+            'elementId' => 'combo',
+            'relation' => 'field',
+            'storeRelationAbility' => 'many',
+        ));
+        consider('realtime', 'fields', 'entityId', array (
+            'required' => 'y',
+        ));
+        field('realtime', 'title', array (
+            'title' => 'Запись',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'string',
+            'mode' => 'hidden',
+        ));
+        field('realtime', 'mode', array (
+            'title' => 'Режим',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'none',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+        ));
+        enumset('realtime', 'mode', 'none', array('title' => 'Не применимо'));
+        enumset('realtime', 'mode', 'rowset', array('title' => 'Набор записей'));
+        enumset('realtime', 'mode', 'row', array('title' => 'Одна запись'));
+        field('realtime', 'scope', array (
+            'title' => 'Scope',
+            'columnTypeId' => 'TEXT',
+            'elementId' => 'textarea',
+        ));
+        entity('realtime', array('titleFieldId' => 'title'));
+        section('realtime', array (
+            'sectionId' => 'configuration',
+            'entityId' => 'realtime',
+            'title' => 'Рилтайм',
+            'defaultSortField' => 'spaceSince',
+            'type' => 's',
+            'groupBy' => 'adminId',
+            'roleIds' => '1',
+            'multiSelect' => '1',
+        ))->nested('grid')->delete();
+        section2action('realtime','form', array('profileIds' => '1'));
+        section2action('realtime','index', array('profileIds' => '1'));
+        section2action('realtime','save', array('profileIds' => '1'));
+        section2action('realtime','delete', array('profileIds' => '1'));
+        section2action('realtime','yield', array (
+            'profileIds' => '1',
+            'rename' => 'Перезагрузить websocket-сервер',
+        ));
+        grid('realtime', 'title', true);
+        grid('realtime', 'token', array('toggle' => 'h'));
+        grid('realtime', 'sectionId', array('toggle' => 'h'));
+        grid('realtime', 'type', array('toggle' => 'h'));
+        grid('realtime', 'profileId', array('toggle' => 'h'));
+        grid('realtime', 'adminId', true);
+        grid('realtime', 'spaceSince', true);
+        grid('realtime', 'spaceUntil', array('toggle' => 'h'));
+        grid('realtime', 'spaceFrame', array('toggle' => 'h'));
+        grid('realtime', 'langId', array('toggle' => 'h'));
+        grid('realtime', 'entityId', array('toggle' => 'h'));
+        grid('realtime', 'entries', array('toggle' => 'n'));
+        grid('realtime', 'fields', array('toggle' => 'h'));
+        filter('realtime', 'type', true);
+        filter('realtime', 'profileId', true);
+        filter('realtime', 'langId', true);
+        filter('realtime', 'adminId', true);
+        die('ok');
+    }
+    public function testAction() {
+        mt();
+        //for ($i = 0; $i < 50; $i++) m('Test')->createRow(['title' => 'Test' . str_pad($i+1, 2, '0', STR_PAD_LEFT)], true)->save();
+        /*for ($i = 0; $i < 10000; $i++) {
+            //Indi::db()->query('SELECT * FROM `test` WHERE `id`="169" OR `title` <= "Тест 12111" ORDER BY `title` DESC LIMIT 2')->fetchAll();
+            Indi::db()->query('SELECT * FROM `test` ORDER BY `title` ASC LIMIT 25, 1')->fetchAll();
+        }*/
+        //m('Test')->createRow(['title' => 'Жопа 2'], true)->save();
+        //m('Test')->fetchRow('`id` = "206"')->delete();
+        Indi::iflush(true);
+        for ($i = 1; $i <= 1000; $i++) {
+            break;
+            $data = ['title' => 'Test ' . $i]; d($data);
+            m('Test')->createRow($data, true)->save();
+        }
+        m('Test')->fetchAll()->delete();
+        Indi::ws(false);
+        d(mt());
+        die('xx1');
+    }
     public function actionsl10nAction(){
         field('section2action', 'l10n', array (
             'title' => 'Мультиязычность',
