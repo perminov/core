@@ -2877,9 +2877,26 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If $data is not an array, e.g some error there, output it as json with that error
         if (!is_array($data)) jflush(false, $data);
 
+        // Delete current `realtime` entry, representing the session
+        m('Realtime')->row([
+            '`token` = "' . session_id() . '"',
+            '`type` = "session"',
+            'profileId' => $_SESSION['admin']['profileId'],
+            'adminId' => $_SESSION['admin']['id'],
+        ])->delete();
+
         // Else start a session for user and report that sing-in was ok
         foreach (ar('id,title,email,password,profileId,profileTitle,alternate,mid') as $allowedI)
             $_SESSION['admin'][$allowedI] = $data[$allowedI];
+
+        // Create `realtime` entry having `type` = 'session'
+        m('Realtime')->createRow([
+            'type' => 'session',
+            'profileId' => $_SESSION['admin']['profileId'],
+            'adminId' => $_SESSION['admin']['id'],
+            'token' => session_id(),
+            'langId' => m('Lang')->fetchRow('`alias` = "' . $_COOKIE['i-language'] . '"')->id,
+        ], true)->save();
 
         // Reload main window for new session data to be picked
         jflush(true, array('throwOutMsg' => true));

@@ -149,7 +149,8 @@ class Indi_Controller_Migrate extends Indi_Controller {
         section2action('realtime','index', array('profileIds' => '1'));
         section2action('realtime','save', array('profileIds' => '1'));
         section2action('realtime','delete', array('profileIds' => '1'));
-        section2action('realtime','yield', array (
+        action('restart', ['title' => 'Перезапустить', 'rowRequired' => 'n', 'type' => 's']);
+        section2action('realtime','restart', array (
             'profileIds' => '1',
             'rename' => 'Перезагрузить websocket-сервер',
         ));
