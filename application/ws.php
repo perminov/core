@@ -176,7 +176,8 @@ while (true) {
             fwrite($clientI, encode('{}'));
 
             // If  session id detected, and `realtime` entry of `type` = "session" found
-            if (preg_match('~PHPSESSID=([^; ]+)~', $info['Cookie'], $m)
+            if ($ini['realtime']
+                && preg_match('~PHPSESSID=([^; ]+)~', $info['Cookie'], $m)
                 && $session = $db->rget('realtime', '`type` = "session" AND `token` = "' . $m[1] . '"')) {
 
                 // Prepate data for `realtime` entry of `type` = "channel"

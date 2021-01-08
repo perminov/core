@@ -1,7 +1,7 @@
 <?php
 class Admin_RealtimeController extends Indi_Controller_Admin {
 
-    public function yieldAction() {
+    public function restartAction() {
 
         // Get lock file
         $wsLock = DOC . STD . '/core/application/ws.pid';
@@ -17,7 +17,7 @@ class Admin_RealtimeController extends Indi_Controller_Admin {
                 // Build websocket startup cmd
                 $result['cmd'] = preg_match('/^WIN/i', PHP_OS)
                     ? sprintf('taskkill /f /PID  %s 2>&1', $wsPid)
-                    : 'asdasdasd';
+                    : sprintf('kill -9 %s', $wsPid);
 
                 // Start websocket server
                 wslog('------------------------------');
