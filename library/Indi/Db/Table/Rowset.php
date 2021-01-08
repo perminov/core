@@ -1723,4 +1723,20 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         // Return rowset itself
         return $this;
     }
+
+    /**
+     * Call *_Row->save() for each *_Row instance within current rowset
+     *
+     * @param bool $notices
+     * @param bool $amerge
+     * @return $this
+     */
+    public function save() {
+
+        // Call save() on each row within current rowset
+        foreach ($this as $row) $row->save();
+
+        // Return rowset itself
+        return $this;
+    }
 }
