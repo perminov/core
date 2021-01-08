@@ -99,17 +99,8 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Perform authentication
         $this->auth();
 
-        // If $_POST['destroy'] is only given, and websocket-channel is known - remove context
-        if ((count(Indi::post()) == 1)
-            && CID
-            && ($token = Indi::post('destroy'))) {
-            if (($channel = m('realtime')->fetchRow('`type` = "channel" AND `token` = "' . CID . '"'))
-                && ($context = m('realtime')->fetchRow('`type` = "context" AND `token` = "' . $token . '" AND `realtimeId` = "' . $channel->id . '"'))) {
-                $context->delete();
-                jflush(true);
-            }
-            jflush(false);
-        }
+        // Delete `realtime` entry having `type` = "context", if $_POST['destroy'] is given
+        $this->deleteContextIfNeed();
 
         // Jump, if need
         $this->jump();
@@ -3694,5 +3685,37 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Setup list of possible translations and current/last chosen one
         return Indi::view()->lang = array('odata' => $langA, 'name' => $lang) + ($l10n ?: array());
+    }
+
+    /**
+     * Delete `realtime` entry having `type` = "context", if $_POST['destroy'] is given
+     */
+    public function deleteContextIfNeed() {
+
+        // If $_POST['destroy'] is only given
+        if ((count(Indi::post()) == 1) && ($ctx = Indi::post('destroy'))) {
+
+            // Check $token format and CID format
+            jcheck([
+                'ctx' => ['rex' => 'ctx'],
+                'cid' => ['rex' => 'wskey']
+            ], ['ctx' => $ctx, 'cid' => CID]);
+
+            // If websocket-channel is known - remove context
+            if (CID
+                && ($chl = m('realtime')->row(['`type` = "channel"', '`token` = "' . CID . '"']))
+                && ($ctx = m('realtime')->row(['`type` = "context"', '`token` = "' . $ctx . '"', '`realtimeId` = "' . $chl->id . '"']))
+            ) {
+
+                // Delete context
+                $ctx->delete();
+
+                // Flush success
+                jflush(true);
+            }
+
+            // Flush success if realtime is turned Off, else flush failure
+            jflush(!Indi::ini('ws')->realtime);
+        }
     }
 }

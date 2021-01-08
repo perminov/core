@@ -1107,6 +1107,13 @@ class Indi_Db_Table
     }
 
     /**
+     * Alias for fetchRow()
+     */
+    public function row($where = null, $order = null, $offset = null) {
+        return $this->fetchRow($where, $order, $offset);
+    }
+
+    /**
      * Create empty row. If non-false $assign argument is given - we assume that $input arg should not be used
      * be used for construction, but should be used for $this->assign() call. This may me useful
      * in case when we need to create an instance of a row and assign a values into it - and all

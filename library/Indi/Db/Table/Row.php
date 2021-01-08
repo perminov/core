@@ -1022,9 +1022,10 @@ class Indi_Db_Table_Row implements ArrayAccess
      *
      * @param bool $notices If `true - notices will not be omitted
      * @param bool $amerge If `true - previous value $this->_affected will be kept, but newly affected will have a priority
+     * @param bool $realtime If `true - $this->realtime('affected') call will be made
      * @return int
      */
-    public function basicUpdate($notices = false, $amerge = true) {
+    public function basicUpdate($notices = false, $amerge = true, $realtime = true) {
 
         // Data types check, and if smth is not ok - flush mismatches
         $this->scratchy(true);
@@ -1064,6 +1065,9 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Check if row (in it's current/modified state) matches each separate notification's criteria,
         // and compare results with the results of previous check, that was made before any modifications
         if ($notices) $this->_noticesStep2($original);
+
+        // Involve realtime feature
+        if ($realtime) $this->realtime('affected');
 
         // Return number of affected rows (1 or 0)
         return $affected;
