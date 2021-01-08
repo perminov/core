@@ -49,8 +49,7 @@ class Admin_RealtimeController extends Indi_Controller_Admin {
     }
 
     /**
-     * Explicitly notify about insertion, because the fact that entry had empty title
-     * means that it was created via ws.php, so ->realtime('inserted') was not called
+     * Reflect tab open/close
      */
     public function preDispatch() {
 
@@ -60,15 +59,20 @@ class Admin_RealtimeController extends Indi_Controller_Admin {
             // Check CID
             jcheck(['cid' => ['req' => true, 'rex' => 'wskey']], ['cid' => CID]);
 
-            // Try to found `realtime` entry having such CID and `type` = 'channel'
-            if ($r = m('Realtime')->fetchRow(['`token` = "' . CID . '"', '`type` = "channel"'])) {
+            // If `realtime` entry of `type` = "session" found
+            if ($session = m('Realtime')->row(['`type` = "session"', '`token` = "' . session_id() . '"'])) {
 
-                // Force `title` to be set
-                $r->save();
+                // Prepare data for `realtime` entry of `type` = "channel"
+                $data = [
+                    'type' => 'channel', 'token' => CID,
+                    'realtimeId' => $session->id, 'spaceSince' => date('Y-m-d H:i:s')
+                ] + $session->toArray();
 
-                // Explicitly notify about insertion, because the fact that entry had empty title
-                // means that it was created via ws.php, so ->realtime('inserted') was not called
-                $r->realtime('inserted');
+                // Unset 'id'
+                unset($data['id'], $data['title']);
+
+                // Save into `realtime` table
+                m('Realtime')->createRow($data, true)->save();
 
                 // Flush success
                 jflush(true);
