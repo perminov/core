@@ -32,6 +32,21 @@ function err($msg = null, $exit = false) {
 }
 
 /**
+ * Log $data into ws.<pid>.data file
+ *
+ * @param $data
+ */
+function logd($data) {
+
+    // Do log, with millisecond-precise timestamp
+    file_put_contents(
+        rtrim(__DIR__, '\\/') . '/' . 'ws.' . getmypid(). '.data',
+        date('Y-m-d H:i:s') . substr(explode(' ', microtime())[0], 1, 4) . ' => ' . $data . "\n",
+        FILE_APPEND
+    );
+}
+
+/**
  * Shutdown function, for use as a shutdown handler
  */
 function shutdown() {
@@ -141,6 +156,12 @@ fwrite($pid, getmypid());
 // Log that we successfully started websocket-server
 err('socket server started, ws.pid: ' . getmypid() . ' => updated');
 
+// Session ids array
+$sessidA = array();
+
+// Languages array
+$langidA = array();
+
 // Clients' streams array
 $clientA = array();
 
@@ -172,7 +193,47 @@ while (true) {
             fwrite($clientI, encode('{}'));
 
             // Add to collection
-            $clientA[$info['Sec-WebSocket-Key'] ?: count($clientA)] = $clientI;
+            $clientA[$index = $info['Sec-WebSocket-Key'] ?: count($clientA)] = $clientI;
+
+            // Log channel id of accepted client
+            if ($ini['log']) logd('accepted: ' . $index);
+
+            // If  session id detected, and `realtime` entry of `type` = "session" found
+            if ($ini['realtime'] && preg_match('~PHPSESSID=([^; ]+)~', $info['Cookie'], $sessid)) {
+
+                // Remember session id
+                $sessidA[$index] = $sessid[1];
+
+                // Log
+                if ($ini['log']) logd('identified: ' . $index);
+
+                // Get language
+                preg_match('~i-language=([a-zA-Z\-]{2,5})~', $info['Cookie'], $langid);
+
+                // Remember language
+                $langidA[$index] = $langid[1];
+
+                // Init curl
+                $ch = curl_init();
+
+                // Log
+                if ($ini['log']) logd('?newtab init: ' . $index);
+
+                // Set opts
+                curl_setopt_array($ch, [
+                    CURLOPT_URL => $info['Origin'] . '/realtime/?newtab',
+                    CURLOPT_HTTPHEADER => [
+                        'Indi-Auth: ' . implode(':', [$sessid[1], $langid[1], $index]),
+                        'Cookie: ' . $info['Cookie'],
+                    ]
+                ]);
+
+                // Exec and close curl
+                curl_exec($ch); curl_close($ch);
+
+                // Log
+                if ($ini['log']) logd('?newtab done: ' . $index);
+            }
         }
 
         // Remove server's socket from the list of sockets to be listened
@@ -180,16 +241,19 @@ while (true) {
     }
 
     // Foreach client stream
-    foreach($listenA as $clientI) {
+    foreach($listenA as $index => $clientI) {
 
         // Read data
         $binary = fread($clientI, 10000);
 
         // Get stream index
-        $index = array_search($clientI, $clientA);
+        //$index = array_search($clientI, $clientA);
 
         // If no data
         if (!$binary) {
+
+            // Log that channel is going to be closed
+            if ($ini['log']) logd('nobinary: ' . $index);
 
             // Close client's current stream
             fclose($clientI);
@@ -203,8 +267,35 @@ while (true) {
                         unset($channelA[$rid][$uid][$index]);
 
                         // Log that channel was closed
-                        if ($ini['log']) file_put_contents('ws.chl',
-                            date('Y-m-d H:i:s') . ' => close: ' . $rid . '-' . $uid . '-' . $index . "\n", FILE_APPEND);
+                        if ($ini['log']) logd('close: ' . $rid . '-' . $uid . '-' . $index);
+
+                        // If session id detected, and `realtime` entry of `type` = "session" found
+                        if ($ini['realtime'] && array_key_exists($index, $sessidA)) {
+
+                            // Init curl
+                            $ch = curl_init();
+
+                            // Log that Indi Engine is going to be notified about closed channel
+                            if ($ini['log']) logd('?closetab init: ' . $rid . '-' . $uid . '-' . $index);
+
+                            // Set opts
+                            curl_setopt_array($ch, [
+                                CURLOPT_URL => 'http://zvukograd.local/realtime/?closetab',
+                                CURLOPT_HTTPHEADER => [
+                                    'Indi-Auth: ' . implode(':', [$sessidA[$index], $langidA[$index], $index]),
+                                    'Cookie: ' . 'PHPSESSID=' . $sessidA[$index] . '; i-language=' . $langidA[$index]
+                                ]
+                            ]);
+
+                            // Exec and close curl
+                            curl_exec($ch); curl_close($ch);
+
+                            // Log that Indi Engine is notified about closed channel
+                            if ($ini['log']) logd('?closetab done: ' . $rid . '-' . $uid . '-' . $index);
+
+                            // Drop session id and language id
+                            unset($sessidA[$index], $langidA[$index]);
+                        }
                     }
                 }
 
@@ -215,20 +306,19 @@ while (true) {
             continue;
         }
 
-        // Log
+        // Log incoming data
         echo '--fread--' . "\n";
-        echo $log = date('Y-m-d H:i:s') . ' => chl:' . $index . ', len: ' . strlen($binary) . ', raw:' . $binary . "\n";
-        if ($ini['log']) file_put_contents('ws.' . getmypid() . '.data', $log, FILE_APPEND);
+        echo $log = 'chl:' . $index . ', len: ' . strlen($binary) . ', raw:' . $binary;
+        if ($ini['log']) logd($log);
 
-        //
+        // Do
         do {
 
-            // Decode data
+            // Decode data. If data is multi-framed - $binary - is the binary data representing the remaining frames
             list($data, $binary) = decode($binary);
 
-            // Log that channel was closed
-            if ($ini['log']) file_put_contents('ws.' . getmypid() . '.data',
-                date('Y-m-d H:i:s') . ' => chl:' . $index . ', obj:' . print_r($data, true) . "\n", FILE_APPEND);
+            // Log decoded frame
+            if ($ini['log']) logd('chl:' . $index . ', obj:' . json_encode($data));
 
             // Here we skip messages having 'type' not 'text'
             if ($data['type'] != 'text') continue 2;
@@ -247,9 +337,8 @@ while (true) {
                 if (!is_array($channelA[$rid][$uid])) $channelA[$rid][$uid] = array();
                 $channelA[$rid][$uid][$index] = $index;
 
-                // Log that channel was opened
-                if ($ini['log']) file_put_contents('ws.chl',
-                    date('Y-m-d H:i:s') . ' => open: ' . $data['uid'] . '-' . $index . "\n", FILE_APPEND);
+                // Log that open-message is received
+                if ($ini['log']) logd('open: ' . $data['uid'] . '-' . $index);
 
                 // Write message into channel
                 fwrite($clientA[$channelA[$rid][$uid][$index]], encode(json_encode(array('type' => 'opened', 'cid' => $index))));
@@ -260,8 +349,8 @@ while (true) {
                 // Get user's role id and self id
                 list($rid, $uid) = explode('-', $data['uid']);
 
-                // If logging is On - do log
-                if ($ini['log']) file_put_contents('ws.ping.msg', date('Y-m-d H:i:s => ') . print_r($data, true) . "\n", FILE_APPEND);
+                // If logging is On - do log ping
+                if ($ini['log']) logd('ping: ' . json_encode($data));
 
                 // Change type to 'pong'
                 $data['type'] = 'pong';

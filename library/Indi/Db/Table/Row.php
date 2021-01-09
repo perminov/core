@@ -820,7 +820,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     // Update `realtime` entry
                     $realtimeR->basicUpdate();
 
-                // Else if deleted
+                // Else if deleted entry is on prev or next page
                 } else if (!$scope['WHERE'] || Indi::db()->query($sql = '
                     SELECT `id` FROM `' . $this->_table . '` WHERE `id` = "' . $this->id . '" AND (' . $scope['WHERE'] . ')'
                 )->fetchColumn()) {
