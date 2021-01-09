@@ -5,7 +5,6 @@ class Admin_RealtimeController extends Indi_Controller_Admin {
 
         // Get lock file
         $wsLock = DOC . STD . '/core/application/ws.pid';
-        $wsChl  = DOC . STD . '/core/application/ws.chl';
         $wsErr  = DOC . STD . '/core/application/ws.err';
 
         // If websocket-server lock-file exists, and contains websocket-server's process ID, and it's an integer
@@ -36,7 +35,6 @@ class Admin_RealtimeController extends Indi_Controller_Admin {
                 $flush['result'] = $result;
 
                 // Truncate
-                file_put_contents($wsChl, '');
                 file_put_contents($wsErr, '');
 
                 // Flush msg
@@ -71,8 +69,8 @@ class Admin_RealtimeController extends Indi_Controller_Admin {
                 // Unset 'id'
                 unset($data['id'], $data['title']);
 
-                // Save into `realtime` table
-                m('Realtime')->createRow($data, true)->save();
+                // Save into `realtime` table using separate background process
+                Indi::cmd('channel', ['arg' => $data]);
 
                 // Flush success
                 jflush(true);
@@ -91,7 +89,7 @@ class Admin_RealtimeController extends Indi_Controller_Admin {
             if ($r = m('Realtime')->fetchRow(['`token` = "' . CID . '"', '`type` = "channel"'])) {
 
                 // Delete
-                $r->delete();
+                Indi::cmd('channel', ['arg' => $r->id]);
 
                 // Flush success
                 jflush(true);
