@@ -2585,8 +2585,18 @@ class Indi {
      */
     public static function cmd($method, $args = array()) {
 
+        // Default temp dir
+        $dir = sys_get_temp_dir();
+        
+        // If open_basedir restriction is in effect - try to find tmp dir there
+        if ($dirS = ini_get('open_basedir'))
+            if ($dirA = explode(':', $dirS))
+                foreach ($dirA as $dirI)
+                    if (preg_match('~te?mp$~', $dirI))
+                        $dir = $dirI;
+
         // Create temporary file
-        $env = tempnam(sys_get_temp_dir(), 'cmd');
+        $env = tempnam($dir, 'cmd');
 
         // Prepare command
         $cmd = Indi::ini('general')->phpdir . "php ../core/application/cmd.php $method \"$env\"";
