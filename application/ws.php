@@ -296,7 +296,7 @@ while (true) {
 
                             // Set opts
                             curl_setopt_array($ch, [
-                                CURLOPT_URL => 'http://zvukograd.local/realtime/?closetab',
+                                CURLOPT_URL => ($ini['pem'] ? 'https' : 'http') . '://' . $ini['socket'] . '/realtime/?closetab',
                                 CURLOPT_HTTPHEADER => [
                                     'Indi-Auth: ' . implode(':', [$sessidA[$index], $langidA[$index], $index]),
                                     'Cookie: ' . 'PHPSESSID=' . $sessidA[$index] . '; i-language=' . $langidA[$index]
