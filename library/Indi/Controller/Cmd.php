@@ -25,9 +25,27 @@ class Indi_Controller_Cmd extends Indi_Controller {
     public function channelAction($arg) {
 
         // If $arg is an array - create `realtime` entry, that will represent browser tab / websocket channel
-        if (is_array($arg)) $r = m('Realtime')->createRow($arg, true); $r->save();
+        if (is_array($arg)) {
+
+            // If $_COOKIE['prevcid'] given and such channel exists
+            if (Indi::rexm('wskey', $prevcid = str_replace(' ', '+', $_COOKIE['prevcid']))
+                && $r = m('Realtime')->fetchRow([
+                    '`realtimeId` = "' . $arg['realtimeId'] . '"',
+                    '`token` = "' . $prevcid . '"'
+                ])) {
+                i('spoof ' . $prevcid . ' with ' . $arg['token'], 'a');
+
+                // Spoof `token` of an existing `realtime` entry of `type` = 'channel'
+                $r->assign($arg)->save();
+
+            // Else create new `realtime` entry of `type` = 'channel'
+            } else {
+                i('newtab ' . $arg['token']  . ' done', 'a');
+                m('Realtime')->createRow($arg, true)->save();
+            }
+        }
 
         // Else if $arg is integer - delete such `realtime` entry
-        } else if (Indi::rexm('int11', $arg)) m('Realtime')->row($arg)->delete();
+        elseif (Indi::rexm('int11', $arg)) m('Realtime')->row($arg)->delete();
     }
 }

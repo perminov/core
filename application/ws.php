@@ -201,6 +201,9 @@ while (true) {
             // If  session id detected, and `realtime` entry of `type` = "session" found
             if ($ini['realtime'] && preg_match('~PHPSESSID=([^; ]+)~', $info['Cookie'], $sessid)) {
 
+                //
+                ob_start(); print_r($info); logd(ob_get_clean());
+
                 // Remember session id
                 $sessidA[$index] = $sessid[1];
 
@@ -219,12 +222,25 @@ while (true) {
                 // Log
                 if ($ini['log']) logd('?newtab init: ' . $index);
 
+                // Build url
+                $prevcid = '';
+
+                // If query string given in $info['path'] and ?prev=xxx param is there
+                if ($q = parse_url($info['uri'], PHP_URL_QUERY)) {
+
+                    // Get query params
+                    parse_str($q, $a);
+
+                    // Append prev cid
+                    if (isset($a['prev'])) $prevcid = $a['prev'];
+                }
+
                 // Set opts
                 curl_setopt_array($ch, [
                     CURLOPT_URL => $info['Origin'] . '/realtime/?newtab',
                     CURLOPT_HTTPHEADER => [
                         'Indi-Auth: ' . implode(':', [$sessid[1], $langid[1], $index]),
-                        'Cookie: ' . $info['Cookie'],
+                        'Cookie: ' . $info['Cookie'] . rif($prevcid, '; prevcid=$1'),
                     ]
                 ]);
 
