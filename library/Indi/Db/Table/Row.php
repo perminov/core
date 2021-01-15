@@ -857,20 +857,24 @@ class Indi_Db_Table_Row implements ArrayAccess
                     // Else if deleted entry ID is below the others, it means it belongs to the one of next pages
                     } else if ($this->id == array_pop($idA)) $byChannel[$channel][$context]['deleted'] = 'next';
 
-                    // Prepare data and group it by channel and context
-                    $byChannel[$channel][$context] += [
-                        'table' => $this->_table,
-                        'entry' => $this->id
-                    ];
+                    // If $byChannel[$channel][$context] is empty - this means that current entry was already deleted
+                    if ($byChannel[$channel][$context]) {
 
-                    // Decrement found
-                    $scope['found'] --;
+                        // Prepare data and group it by channel and context
+                        $byChannel[$channel][$context] += [
+                            'table' => $this->_table,
+                            'entry' => $this->id
+                        ];
 
-                    // Update scope
-                    $realtimeR->scope = json_encode($scope, JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT);
+                        // Decrement found
+                        $scope['found'] --;
 
-                    // Update `realtime` entry
-                    $realtimeR->basicUpdate();
+                        // Update scope
+                        $realtimeR->scope = json_encode($scope, JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT);
+
+                        // Update `realtime` entry
+                        $realtimeR->basicUpdate();
+                    }
                 }
 
             // Else if $event is 'inserted'

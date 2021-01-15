@@ -39,7 +39,6 @@ class Realtime_Row extends Indi_Db_Table_Row {
      * For now it's disabled, as in case if there is only one tab, and it's reloaded - session is deleted
      */
     public function onDelete() {
-        return;
         if ($this->type == 'channel')
             if (!$this->model()->fetchRow(['`type` = "channel"', '`realtimeId` = "' . $this->realtimeId . '"']))
                 $this->foreign('realtimeId')->delete();

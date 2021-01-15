@@ -227,15 +227,8 @@ class Indi_Controller_Admin extends Indi_Controller {
                             'tree' => $fetchMethod == 'fetchTree'
                         ];
 
-                        // Track involved entries
-                        if ($_ = m('realtime')->fetchRow([
-                            '`type` = "context"',
-                            '`token` = "' . t()->bid() . '"',
-                            '`realtimeId` = "' . m('realtime')->fetchRow('`token` = "' . CID . '"')->id . '"'
-                        ]) ?: t()->context()) $_->assign([
-                            'entries' => $this->rowset->column('id', ','),
-                            'scope' => json_encode($scope, JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT)
-                        ])->save();
+                        // Create context if need
+                        $this->createContextIfNeed($scope);
 
                         /**
                          * Remember current rowset properties SQL - WHERE, ORDER, LIMIT clauses - to be able to apply these properties in cases:
@@ -2212,7 +2205,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 else if (!Indi::uri()->format) iexit('<script>top.window.location="' . PRE .'/logout/"</script>');
                 else jflush(false, array('throwOutMsg' => $data));
 
-            // Else if current section is 'index', e.g we are in the root of interface
+            // Else if current section is not 'index', e.g we are not in the root of interface
             } else if (Indi::uri()->section != 'index') {
 
                 // Do the second level access check
@@ -2223,6 +2216,18 @@ class Indi_Controller_Admin extends Indi_Controller {
 
                 // Else go further and perform last auth check, within Indi_Trail_Admin::__construct()
                 else Indi::trail($this->_routeA, $this)->authLevel3();
+
+            // Else if current section is 'index', e.g we are in the root of interface
+            } else if (!m('Realtime')->fetchRow(['`type` = "session"', '`token` = "' . session_id() . '"'])) {
+
+                // Create `realtime` entry having `type` = 'session'
+                m('Realtime')->createRow([
+                    'type' => 'session',
+                    'profileId' => $_SESSION['admin']['profileId'],
+                    'adminId' => $_SESSION['admin']['id'],
+                    'token' => session_id(),
+                    'langId' => m('Lang')->fetchRow('`alias` = "' . $_COOKIE['i-language'] . '"')->id,
+                ], true)->save();
             }
         }
 
@@ -2885,7 +2890,7 @@ class Indi_Controller_Admin extends Indi_Controller {
             'adminId' => $_SESSION['admin']['id'],
         ])->delete();
 
-        // Else start a session for user and report that sing-in was ok
+        // Start a session for user and report that sing-in was ok
         foreach (ar('id,title,email,password,profileId,profileTitle,alternate,mid') as $allowedI)
             $_SESSION['admin'][$allowedI] = $data[$allowedI];
 
@@ -2917,11 +2922,31 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Unset session
         if ($_SESSION['admin']['id'])  unset($_SESSION['admin'], $_SESSION['indi']['admin']);
 
-        // Remove session
+        // If `realtime` entry of `type` = "session" exists
         if ($_ = m('Realtime')->fetchRow([
             '`type` = "session"',
-            '`token` = "' . $_COOKIE['PHPSESSID'] . '"'
-        ], '`id` DESC')) $_->delete();
+            '`token` = "' . session_id() . '"'
+        ])) {
+
+            // Refresh other tabs
+            foreach($channelA = Indi::db()->query('
+                SELECT `token` 
+                FROM `realtime` 
+                WHERE 1
+                  AND `type` = "channel" 
+                  AND `realtimeId` = "' . $_->id . '" 
+                  AND `token` != "' . CID . '"
+            ')->fetchAll(PDO::FETCH_COLUMN) as $channel)
+
+                // Reload tabs
+                Indi::ws([
+                    'type' => 'F5',
+                    'to' => $channel
+                ]);
+
+            // Delete `realtime` entry
+            $_->delete();
+        }
 
         // Flush basic info
         if (APP) jflush(true, array(
@@ -3702,6 +3727,24 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Setup list of possible translations and current/last chosen one
         return Indi::view()->lang = array('odata' => $langA, 'name' => $lang) + ($l10n ?: array());
+    }
+
+    /**
+     * Create `realtime` entry having `type` = "context", if not yet created, and assign `scope` and `entries` props
+     *
+     * @param $scope
+     */
+    public function createContextIfNeed($scope) {
+
+        // Track involved entries
+        if ($_ = m('realtime')->fetchRow([
+            '`type` = "context"',
+            '`token` = "' . t()->bid() . '"',
+            '`realtimeId` = "' . m('realtime')->fetchRow('`token` = "' . CID . '"')->id . '"'
+        ]) ?: t()->context()) $_->assign([
+            'entries' => $this->rowset->column('id', ','),
+            'scope' => json_encode($scope, JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT)
+        ])->save();
     }
 
     /**

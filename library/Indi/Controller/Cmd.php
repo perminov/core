@@ -46,6 +46,9 @@ class Indi_Controller_Cmd extends Indi_Controller {
         }
 
         // Else if $arg is integer - delete such `realtime` entry
-        elseif (Indi::rexm('int11', $arg)) m('Realtime')->row($arg)->delete();
+        elseif (Indi::rexm('int11', $arg)) {
+            i('closetab ' . $arg  . ' done', 'a');
+            m('Realtime')->row($arg)->delete();
+        }
     }
 }

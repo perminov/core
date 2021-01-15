@@ -1,0 +1,8 @@
+{
+    "name": "indi-engine/core",
+    "description": "Indi Engine",
+    "type": "project",
+    "require": {
+        "php-amqplib/php-amqplib": "2.12.0"
+    }
+}

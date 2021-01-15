@@ -1,4 +1,8 @@
 <?php
+require_once __DIR__ . '/../vendor/autoload.php';
+use PhpAmqpLib\Connection\AMQPStreamConnection;
+use PhpAmqpLib\Message\AMQPMessage;
+
 class Indi {
 
     /**
@@ -71,6 +75,11 @@ class Indi {
      * @var null
      */
     protected static $_ws = null;
+
+    /**
+     * @var null
+     */
+    protected static $_mq = null;
 
     /**
      * Regular expressions patterns for common usage
@@ -2505,6 +2514,29 @@ class Indi {
 
         // If websockets is not enabled - return
         if (!Indi::ini('ws')->enabled) return;
+
+        // If data type is 'realtime' or 'F5', and rabbitmq is enabled
+        if (in($data['type'], 'realtime,F5') && Indi::ini('rabbitmq')->enabled) {
+
+            // Get credentials
+            $mq = Indi::ini('rabbitmq');
+
+            // If rabbitmq connection channel not yet exists
+            if (!self::$_mq) {
+
+                // Create connection
+                $connection = new AMQPStreamConnection($mq['host'], $mq['port'], $mq['user'], $mq['pass']);
+
+                // Create channel
+                self::$_mq = $connection->channel();
+            }
+
+            // Send message
+            self::$_mq->basic_publish(new AMQPMessage(json_encode($data)), '', $data['to']);
+
+            // Return
+            return;
+        }
 
         // If client socket is not yet created
         if (!self::$_ws && $data !== false)  {
