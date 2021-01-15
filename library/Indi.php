@@ -2518,11 +2518,11 @@ class Indi {
         // If data type is 'realtime' or 'F5', and rabbitmq is enabled
         if (in($data['type'], 'realtime,F5') && Indi::ini('rabbitmq')->enabled) {
 
-            // Get credentials
-            $mq = Indi::ini('rabbitmq');
-
             // If rabbitmq connection channel not yet exists
             if (!self::$_mq) {
+
+                // Get credentials
+                $mq = Indi::ini('rabbitmq');
 
                 // Create connection
                 $connection = new AMQPStreamConnection($mq['host'], $mq['port'], $mq['user'], $mq['pass']);

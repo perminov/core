@@ -223,7 +223,7 @@ while (true) {
             if ($ini['log']) logd('accepted: ' . $index);
 
             // If  session id detected, and `realtime` entry of `type` = "session" found
-            if ($ini['realtime'] && preg_match('~PHPSESSID=([^; ]+)~', $info['Cookie'], $sessid)) {
+            if (preg_match('~PHPSESSID=([^; ]+)~', $info['Cookie'], $sessid)) {
 
                 // Log headers
                 ob_start(); print_r($info); logd(ob_get_clean());
@@ -691,7 +691,7 @@ function close(&$clientI, &$channelA, $index, &$ini, &$sessidA, &$langidA, &$rab
                 if ($ini['log']) logd('close: ' . $rid . '-' . $uid . '-' . $index);
 
                 // If session id detected, and `realtime` entry of `type` = "session" found
-                if ($ini['realtime'] && array_key_exists($index, $sessidA)) {
+                if (array_key_exists($index, $sessidA)) {
 
                     // Init curl
                     $ch = curl_init();
