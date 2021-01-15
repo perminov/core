@@ -2522,7 +2522,7 @@ class Indi {
             if (!self::$_mq) {
 
                 // Get credentials
-                $mq = Indi::ini('rabbitmq');
+                $mq = (array) Indi::ini('rabbitmq');
 
                 // Create connection
                 $connection = new AMQPStreamConnection($mq['host'], $mq['port'], $mq['user'], $mq['pass']);
