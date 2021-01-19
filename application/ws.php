@@ -45,6 +45,9 @@ function err($msg = null, $exit = false) {
  */
 function logd($data) {
 
+    // If $data is not scalar - do export
+    if (!is_scalar($data)) $data = var_export($data, true);
+
     // Do log, with millisecond-precise timestamp
     file_put_contents(
         rtrim(__DIR__, '\\/') . '/' . 'ws.' . getmypid(). '.data',
@@ -183,6 +186,9 @@ $langidA = array();
 // Clients' streams array
 $clientA = array();
 
+// Array, containing URL path mentioned within handshake-headers
+$pathA = array();
+
 // Meta array, containing info about what users the active streams belongs to, and what roles those users are
 $channelA = array();
 
@@ -226,7 +232,7 @@ while (true) {
             if (preg_match('~PHPSESSID=([^; ]+)~', $info['Cookie'], $sessid)) {
 
                 // Log headers
-                ob_start(); print_r($info); logd(ob_get_clean());
+                if ($ini['log']) logd($info);
 
                 // Remember session id
                 $sessidA[$index] = $sessid[1];
@@ -269,9 +275,12 @@ while (true) {
                     if (isset($a['prevcid'])) $prevcid = $a['prevcid'];
                 }
 
+                // Get path, as different Indi Engine instances can run on different dirs within same domain
+                $pathA[$index] = rtrim(parse_url($info['uri'], PHP_URL_PATH), '/');
+
                 // Set opts
                 curl_setopt_array($ch, [
-                    CURLOPT_URL => $info['Origin'] . '/realtime/?newtab',
+                    CURLOPT_URL => $info['Origin'] . $pathA[$index] . '/realtime/?newtab',
                     CURLOPT_HTTPHEADER => [
                         'Indi-Auth: ' . implode(':', [$sessid[1], $langid[1], $index]),
                         'Cookie: ' . $info['Cookie'] . rif($prevcid, '; prevcid=$1'),
@@ -303,7 +312,7 @@ while (true) {
             if ($ini['log']) logd('nobinary: ' . $index);
 
             // Close client's stream
-            close($clientI,$channelA, $index,$ini,$sessidA,$langidA,$rabbit,$queueA,$clientA);
+            close($clientI,$channelA, $index,$ini,$sessidA,$langidA,$rabbit,$queueA,$clientA, $pathA);
 
             // Goto next stream
             continue;
@@ -330,7 +339,7 @@ while (true) {
                 if ($ini['log']) logd('type=close: ' . $index);
 
                 // Close client's stream
-                close($clientI,$channelA, $index,$ini,$sessidA,$langidA,$rabbit,$queueA,$clientA);
+                close($clientI,$channelA, $index,$ini,$sessidA,$langidA,$rabbit,$queueA,$clientA, $pathA);
 
                 // Goto next stream
                 continue 2;
@@ -674,7 +683,7 @@ function write($data, $index, &$channelA, &$clientA, $ini) {
  * @param $queueA
  * @param $clientA
  */
-function close(&$clientI, &$channelA, $index, &$ini, &$sessidA, &$langidA, &$rabbit, &$queueA, &$clientA) {
+function close(&$clientI, &$channelA, $index, &$ini, &$sessidA, &$langidA, &$rabbit, &$queueA, &$clientA, &$pathA) {
 
     // Close client's current stream
     fclose($clientI);
@@ -701,7 +710,7 @@ function close(&$clientI, &$channelA, $index, &$ini, &$sessidA, &$langidA, &$rab
 
                     // Set opts
                     curl_setopt_array($ch, [
-                        CURLOPT_URL => ($ini['pem'] ? 'https' : 'http') . '://' . $ini['socket'] . '/realtime/?closetab',
+                        CURLOPT_URL => ($ini['pem'] ? 'https' : 'http') . '://' . $ini['socket'] . $pathA[$index] . '/realtime/?closetab',
                         CURLOPT_HTTPHEADER => [
                             'Indi-Auth: ' . implode(':', [$sessidA[$index], $langidA[$index], $index]),
                             'Cookie: ' . 'PHPSESSID=' . $sessidA[$index] . '; i-language=' . $langidA[$index]
@@ -715,7 +724,7 @@ function close(&$clientI, &$channelA, $index, &$ini, &$sessidA, &$langidA, &$rab
                     if ($ini['log']) logd('?closetab done: ' . $rid . '-' . $uid . '-' . $index);
 
                     // Drop session id and language id
-                    unset($sessidA[$index], $langidA[$index]);
+                    unset($sessidA[$index], $langidA[$index], $pathA[$index]);
 
                     // If queue exists
                     if (isset($queueA[$index])) {
