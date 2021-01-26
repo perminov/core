@@ -1535,14 +1535,8 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
             }
         }
 
-        // Stringify
-        $ctorS = var_export($ctor, true);
-
-        // Minify
-        if (count($ctor) == 1) $ctorS = preg_replace('~^array \(\s+(.*),\s+\)$~', 'array($1)', $ctorS);
-
-        // Return
-        return $ctorS;
+        // Stringify and return $ctor
+        return _var_export($ctor);
     }
 
     /**

@@ -185,7 +185,7 @@ class Section_Row_Base extends Indi_Db_Table_Row {
         }
 
         // Stringify and return $ctor
-        return var_export($ctor, true);
+        return _var_export($ctor);
     }
 
     /**

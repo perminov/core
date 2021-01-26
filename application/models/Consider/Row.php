@@ -112,11 +112,8 @@ class Consider_Row extends Indi_Db_Table_Row {
             }
         }
 
-        // Stringify
-        $ctorS = var_export($ctor, true);
-
-        // Return
-        return $ctorS;
+        // Stringify and return $ctor
+        return _var_export($ctor);
     }
 
     /**

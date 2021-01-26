@@ -2557,3 +2557,30 @@ function __($str) {
     // Call sprintf using $args and return result
     return call_user_func_array('sprintf', $args);
 }
+
+/**
+ * Function used in *_Row->_ctor() calls.
+ * Same as native php's var_export() but do some styling for array definitions
+ *
+ * @param $ctor
+ * @param int $oneLine
+ * @return mixed|string|string[]|null
+ */
+function _var_export($ctor, $oneLine = 3) {
+
+    // Stringify
+    $ctorS = var_export($ctor, true);
+
+    // Style
+    $ctorS = preg_replace('~\)$~', ']', preg_replace('~^array \(~', '[', $ctorS));
+
+    // If $ctor contains $oneLine props or less - remove newlines
+    if (count($ctor) <= $oneLine) {
+        $ctorS = preg_replace('~^\[\n\s\s~', '[', $ctorS);
+        $ctorS = preg_replace('~,\n\s\s\'(' .  im(array_keys($ctor), '|'). ')\'~', ', \'$1\'', $ctorS);
+        $ctorS = preg_replace('~,\n\]$~', ']', $ctorS);
+    }
+
+    // Return ctor string
+    return $ctorS;
+}

@@ -18,16 +18,7 @@ class Param_Row extends Indi_Db_Table_Row_Noeval {
         foreach (ar('fieldId,possibleParamId') as $arg) unset($ctor[$arg]);
 
         // Stringify
-        $ctorS = var_export($ctor, true);
-
-        // Minify
-        if (count($ctor) == 1) {
-            if (array_key_exists('value', $ctor)) $ctorS = "'" . $ctor['value'] . "'";
-            else $ctorS = preg_replace('~^array \(\s+(.*),\s+\)$~', 'array($1)', $ctorS);
-        }
-
-        // Return
-        return $ctorS;
+        return _var_export($ctor);
     }
 
     /**
