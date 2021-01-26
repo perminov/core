@@ -340,6 +340,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
         section2action('admins','save', ['profileIds' => '1']);
         section2action('admins','delete', ['profileIds' => '1']);
         section2action('admins','toggle', ['profileIds' => '1']);
+        section2action('admins','login', ['profileIds' => '1']);
         grid('admins', 'title', ['editor' => 1]);
         grid('admins', 'email', ['editor' => 1]);
         grid('admins', 'password', ['editor' => 1]);
