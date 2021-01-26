@@ -227,7 +227,7 @@ class Admin_SectionsController extends Indi_Controller_Admin_Exportable {
      * Created copies of selected sections and attach under section, chosen within prompt-window
      * Caution! Do not use it, it's not completed and works properly only in specific situations
      */
-    public function duplicateAction() {
+    public function copyAction() {
 
         // Get selected entries ids
         $sectionId_disabled = $this->selected->column('id');
