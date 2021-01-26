@@ -729,11 +729,13 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                     ->{is_string($title = $typeA['foreign']['single'][$columnI]['title']) ? $title : 'title'};
 
                 // If field column type is a multiple foreign key, we use comma-separated titles of related foreign rows
-                if (isset($typeA['foreign']['multiple'][$columnI]['title']) && $entry)
+                if (isset($typeA['foreign']['multiple'][$columnI]['title']) && $entry) {
+                    $data[$pointer][$columnI] = '';
                     foreach ($entry->foreign($further ?: $columnI) as $m)
                         $data[$pointer][$columnI] .= $m
-                            ->{is_string($title = $typeA['foreign']['multiple'][$columnI]['title']) ? $title : 'title'} .
+                                ->{is_string($title = $typeA['foreign']['multiple'][$columnI]['title']) ? $title : 'title'} .
                             ($entry->foreign($further ?: $columnI)->key() < $entry->foreign($further ?: $columnI)->count() - 1 ? ', ' : '');
+                }
 
                 // If field column type is 'date' we adjust it's format if need. If date is '0000-00-00' we set it
                 // to empty string

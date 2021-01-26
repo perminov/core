@@ -112,6 +112,25 @@ class Admin_SectionsController extends Indi_Controller_Admin_Exportable {
         // Call parent
         $this->callParent();
     }
+    /**
+     * Append sort direction clickable icon to the sort field
+     *
+     * @param $item
+     */
+    public function adjustGridDataItem(&$item) {
+
+        // Add icon for `defaultSortField` prop
+        if ($item['defaultSortField']
+            && $info = Indi::rexm('~<span (.*?) title="(.*?)"></span>$~', $item['defaultSortDirection'])) {
+
+            // Setup jump
+            $item['_system']['jump']['defaultSortField'] = [[
+                'href' => 'cell:defaultSortDirection',
+                'ibox' => $info[1],
+                'over' => $info[2]
+            ]];
+        }
+    }
 
     /**
      * 1.Hide default values for `extendsPhp` and `extendsJs` props, to prevent it from creating a mess in eyes
@@ -147,6 +166,18 @@ class Admin_SectionsController extends Indi_Controller_Admin_Exportable {
                 if ($parent != $item['extendsPhp']) $item['_system']['php-error']
                     = sprintf('Файл php-контроллера существует, но в нем родительский класс указан как %s', $parent);
             }
+
+            // Add icon for `extendsPhp` prop
+            if (($_ = $item['extendsPhp']) != 'Indi_Controller_Admin') $item['_render']['extendsPhp']
+                = '<img src="resources/images/icons/btn-icon-php-parent.png" class="i-cell-img">' . $_;
+
+            // Add icon for `extendsJs` prop
+            if (($_ = $item['extendsJs']) != 'Indi.lib.controller.Controller') $item['_render']['extendsJs']
+                = '<img src="resources/images/icons/btn-icon-js-parent.png" class="i-cell-img">' . $_;
+
+            // Add icon for `filter` prop
+            if ($_ = $item['filter']) $item['_render']['filter']
+                = '<img src="resources/images/icons/btn-icon-filter.png" class="i-cell-img">' . $_;
 
             // Get js-controller file name
             $js = DOC . STD . '/' . $dir[$item['$keys']['type']] . '/js/admin/app/controller/' . $item['alias']. '.js';

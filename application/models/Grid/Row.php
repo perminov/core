@@ -24,21 +24,6 @@ class Grid_Row extends Indi_Db_Table_Row {
     }
 
     /**
-     * @return int
-     */
-    public function save(){
-
-        // If no field chosen as a grid column basis - setup title same as `alterTitle`
-        // if (!$this->fieldId || $this->alterTitle) $this->title = $this->alterTitle;
-
-        // If there is no access limitation, empty `profileIds` prop
-        if ($this->access == 'all') $this->profileIds = '';
-
-        // Standard save
-        return parent::save();
-    }
-
-    /**
      * This method is redefined to setup default value for $within arg,
      * for current `grid` entry to be moved within the `section` it belongs to
      *
@@ -176,6 +161,9 @@ class Grid_Row extends Indi_Db_Table_Row {
 
         // If summaryType is not 'text' - set `summaryText` to be empty
         if ($this->summaryType != 'text') $this->zero('summaryText', true);
+
+        // Make sure `profileIds` will be empty if `access` is 'all'
+        if ($this->access == 'all') $this->zero('profileIds', true);
     }
 
     /**

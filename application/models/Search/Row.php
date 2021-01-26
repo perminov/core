@@ -106,4 +106,11 @@ class Search_Row extends Indi_Db_Table_Row {
     public function setTitle() {
         $this->_setTitle();
     }
+
+    /**
+     * Make sure `profileIds` will be empty if `access` is 'all'
+     */
+    public function onBeforeSave() {
+        if ($this->access == 'all') $this->zero('profileIds', true);
+    }
 }
