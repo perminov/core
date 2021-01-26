@@ -327,6 +327,71 @@ class Admin_SectionsController extends Indi_Controller_Admin_Exportable {
             jflush(true, 'Copied');
 
         // Else flush failure
-        } else jflush(false, 'Duplication cancelled');
+        } else jflush(false, 'Copying cancelled');
+    }
+
+    /**
+     * Auto-create `grid` entries for `section` entry, if it's a new entry or `entityId` was changed
+     */
+    public function postSave() {
+
+        // If entityId was not changed - return
+        if (!in('entityId', $this->row->affected())) return;
+
+        // Delete old grid info when associated entity has changed
+        m('Grid')->fetchAll('`sectionId` = "' . $this->id . '"')->delete();
+
+        // Set up new grid, if associated entity remains not null, event after change
+        if (!$this->row->entityId) return;
+
+        // Get entity fields as grid columns candidates
+        $fields = m('Field')->fetchAll('`entityId` = "' . $this->row->entityId . '"', '`move`')->toArray();
+
+        // If no fields - return
+        if (!count($fields)) return;
+
+        // Declare exclusions array, because not each entity field will have corresponding column in grid
+        $exclusions = array();
+
+        // Exclude tree column, if exists
+        if ($tc = m($this->row->entityId)->treeColumn()) $exclusions[] = $tc;
+
+        // Exclude columns that have controls of several types, listed below
+        for ($i = 0; $i < count($fields); $i++) {
+            // 13 - html-editor
+            if (in_array($fields[$i]['elementId'], array(13))) {
+                if ($fields[$i]['elementId'] == 6 && $fields[$i]['alias'] == 'title') {} else {
+                    $exclusions[] = $fields[$i]['alias'];
+                }
+            }
+        }
+
+        // Exclude columns that are links to parent sections
+        $parentSectionId = $this->row->sectionId;
+        do {
+            $parentSection = t()->model->fetchRow('`id` = "' . $parentSectionId . '"');
+            if ($parentSection && $parentEntity = $parentSection->foreign('entityId')){
+                for ($i = 0; $i < count($fields); $i++) {
+                    if ($fields[$i]['alias'] == $parentEntity->table . 'Id' && $fields[$i]['relation'] == $parentEntity->id) {
+                        $exclusions[] = $fields[$i]['alias'];
+                    }
+                }
+                $parentSectionId = $parentSection->sectionId;
+            }
+        } while ($parentEntity);
+
+        // Create grid, stripping exclusions from final grid column list
+        $j = 0; $gridId = 0;
+        for ($i = 0; $i < count($fields); $i++) {
+            if (!in_array($fields[$i]['alias'], $exclusions)) {
+                $gridR = m('Grid')->createRow();
+                $gridR->gridId = $fields[$i]['elementId'] == 16 ? 0 : $gridId;
+                $gridR->sectionId = $this->row->id;
+                $gridR->fieldId = $fields[$i]['id'];
+                $gridR->save();
+                $j++;
+                if ($fields[$i]['elementId'] == 16) $gridId = $gridR->id;
+            }
+        }
     }
 }

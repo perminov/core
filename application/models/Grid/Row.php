@@ -84,17 +84,8 @@ class Grid_Row extends Indi_Db_Table_Row {
         // Unset `width` if current `grid` entry has nested entries
         if ($this->nested('grid')->count()) unset($ctor['width']);
 
-        // Stringify
-        $ctorS = preg_replace("~(array \()\n~", 'array(', var_export($ctor, true));
-        $ctorS = preg_replace("~  ('[a-zA-Z0-9_]+' => '.*?',)\n~", '$1 ', $ctorS);
-        $ctorS = preg_replace("~, \)~", ')', $ctorS);
-
-        // Minify
-        if (count($ctor) == 1) $ctorS = preg_replace('~^array \(\s+(.*),\s+\)$~', 'array($1)', $ctorS);
-        else if (count($ctor) == 0) $ctorS = 'true';
-
-        // Return
-        return $ctorS;
+        // Return stringified $ctor
+        return _var_export($ctor);
     }
 
     /**

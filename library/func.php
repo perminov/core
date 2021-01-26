@@ -2568,6 +2568,9 @@ function __($str) {
  */
 function _var_export($ctor, $oneLine = 3) {
 
+    // If $ctor is empty - return 'true'
+    if (count($ctor) == 0) return 'true';
+
     // Stringify
     $ctorS = var_export($ctor, true);
 
