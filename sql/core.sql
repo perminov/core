@@ -1060,7 +1060,7 @@ CREATE TABLE `realtime` (
   KEY `mode` (`mode`),
   FULLTEXT KEY `fields` (`fields`),
   FULLTEXT KEY `scope` (`scope`)
-) ENGINE=MyISAM AUTO_INCREMENT=1147 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=1150 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1069,7 +1069,6 @@ CREATE TABLE `realtime` (
 
 LOCK TABLES `realtime` WRITE;
 /*!40000 ALTER TABLE `realtime` DISABLE KEYS */;
-INSERT INTO `realtime` VALUES (1145,0,'session',1,1,'ebr6vddn3eocra3ujgprh38o15','2021-01-27 12:56:16','0000-00-00 00:00:00',0,2,0,0,'','','Сессия - ebr6vddn3eocra3ujgprh38o15, Engish','none',''),(1146,1145,'channel',1,1,'EjGjDkL5Sh1sjmNgX2rODA==','2021-01-27 12:56:16','0000-00-00 00:00:00',0,2,0,0,'','','Вкладка - EjGjDkL5Sh1sjmNgX2rODA==','none','');
 /*!40000 ALTER TABLE `realtime` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1393,4 +1392,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2021-01-27 12:56:34
+-- Dump completed on 2021-01-27 13:08:25
