@@ -119,7 +119,6 @@ class Indi_Queue_UsagesUpdate extends Indi_Queue_L10n_FieldToggleL10n {
         if ($queueTaskR->queueState == 'noneed') return;
 
         // Require and instantiate Google Cloud Translation PHP API and
-        require_once('google-cloud-php-translate-1.6.0/vendor/autoload.php');
         $gapi = new Google\Cloud\Translate\V2\TranslateClient(array('key' => Indi::ini('lang')->gapi->key));
 
         // Update `stage` and `state`

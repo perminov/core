@@ -706,9 +706,6 @@ class Indi_Db_Table_Row implements ArrayAccess
         // If websockets are not enabled, or realtime is not enabled - return
         if (!Indi::ini('ws')->enabled || !Indi::ini('ws')->realtime) return;
 
-        // Temporarily ignore modifications for `realtime` and `queue*` entries
-        if (preg_match('~(queue)~', $this->_table)) return;
-
         // Start building WHERE clause
         $where = [
             '`type` = "context"',
@@ -1133,7 +1130,6 @@ class Indi_Db_Table_Row implements ArrayAccess
         if ($batch && $targets) {
 
             // Require and instantiate Google Cloud Translation PHP API and
-            require_once('google-cloud-php-translate-1.6.0/vendor/autoload.php');
             $gapi = new Google\Cloud\Translate\V2\TranslateClient(array('key' => Indi::ini('lang')->gapi->key));
 
             // Try to call Google Cloud Translate API
