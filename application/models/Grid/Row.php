@@ -24,21 +24,6 @@ class Grid_Row extends Indi_Db_Table_Row {
     }
 
     /**
-     * @return int
-     */
-    public function save(){
-
-        // If no field chosen as a grid column basis - setup title same as `alterTitle`
-        // if (!$this->fieldId || $this->alterTitle) $this->title = $this->alterTitle;
-
-        // If there is no access limitation, empty `profileIds` prop
-        if ($this->access == 'all') $this->profileIds = '';
-
-        // Standard save
-        return parent::save();
-    }
-
-    /**
      * This method is redefined to setup default value for $within arg,
      * for current `grid` entry to be moved within the `section` it belongs to
      *
@@ -99,17 +84,8 @@ class Grid_Row extends Indi_Db_Table_Row {
         // Unset `width` if current `grid` entry has nested entries
         if ($this->nested('grid')->count()) unset($ctor['width']);
 
-        // Stringify
-        $ctorS = preg_replace("~(array \()\n~", 'array(', var_export($ctor, true));
-        $ctorS = preg_replace("~  ('[a-zA-Z0-9_]+' => '.*?',)\n~", '$1 ', $ctorS);
-        $ctorS = preg_replace("~, \)~", ')', $ctorS);
-
-        // Minify
-        if (count($ctor) == 1) $ctorS = preg_replace('~^array \(\s+(.*),\s+\)$~', 'array($1)', $ctorS);
-        else if (count($ctor) == 0) $ctorS = 'true';
-
-        // Return
-        return $ctorS;
+        // Return stringified $ctor
+        return _var_export($ctor);
     }
 
     /**
@@ -176,6 +152,9 @@ class Grid_Row extends Indi_Db_Table_Row {
 
         // If summaryType is not 'text' - set `summaryText` to be empty
         if ($this->summaryType != 'text') $this->zero('summaryText', true);
+
+        // Make sure `profileIds` will be empty if `access` is 'all'
+        if ($this->access == 'all') $this->zero('profileIds', true);
     }
 
     /**

@@ -57,6 +57,9 @@ set_include_path(implode($p, $inc));
 // Load misc functions
 require('func.php');
 
+// Require vendor
+if (file_exists('vendor/autoload.php')) require_once('vendor/autoload.php');
+
 // Register autoloader
 spl_autoload_register('autoloader');
 

@@ -1,6 +1,4 @@
 <?php
-use Google\Cloud\Translate\V2\TranslateClient;
-
 class Admin_LangController extends Indi_Controller_Admin {
 
     /**
@@ -8,14 +6,11 @@ class Admin_LangController extends Indi_Controller_Admin {
      */
     public function dictAction() {
 
-        // Require Google Cloud Translation PHP API
-        require_once('google-cloud-php-translate-1.6.0/vendor/autoload.php');
-
         // Get languages, already existing as `lang` entries
         $langA = Indi::db()->query('SELECT `alias`, `title` FROM `lang`')->fetchAll(PDO::FETCH_KEY_PAIR);
 
         // Create Google Cloud Translation PHP API
-        $gapi = new TranslateClient(['key' => Indi::ini('lang')->gapi->key]);
+        $gapi = new Google\Cloud\Translate\V2\TranslateClient(['key' => Indi::ini('lang')->gapi->key]);
 
         // New languages counter
         $l = 0;

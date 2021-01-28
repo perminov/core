@@ -76,6 +76,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
             if ($columnName == 'elementId') $value = element($value)->id;
             else if ($columnName == 'columnTypeId') $value = coltype($value)->id;
             else if (in($columnName, 'entityId,relation')) $value = entity($value)->id;
+            else if ($columnName == 'move') return $this->_system['move'] = $value;
         }
 
         // Standard __set()
@@ -1505,7 +1506,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
         $ctor = $this->_original;
 
         // Exclude `id` and `move` as they will be set automatically by MySQL and Indi Engine, respectively
-        unset($ctor['id'], $ctor['move']);
+        unset($ctor['id']);
 
         // Exclude for now `l10n`, as this thing will be sorted out later, once 'l10n' branch will be merged to 'master'
         unset($ctor['l10n']);
@@ -1522,6 +1523,10 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
             // Exclude prop, if it has value equal to default value
             if ($field->defaultValue == $value) unset($ctor[$prop]);
 
+            // Else if $prop is 'move' - get alias of the field, that current field is after,
+            // among fields with same value of `entityId` prop
+            else if ($prop == 'move') $value = $this->position();
+
             // Else if prop contains keys - use aliases instead
             else if ($field->storeRelationAbility != 'none') {
                 if ($prop == 'columnTypeId') $value = coltype($value)->type;
@@ -1530,14 +1535,8 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
             }
         }
 
-        // Stringify
-        $ctorS = var_export($ctor, true);
-
-        // Minify
-        if (count($ctor) == 1) $ctorS = preg_replace('~^array \(\s+(.*),\s+\)$~', 'array($1)', $ctorS);
-
-        // Return
-        return $ctorS;
+        // Stringify and return $ctor
+        return _var_export($ctor);
     }
 
     /**
@@ -1644,5 +1643,89 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
      */
     public function rel() {
         return Indi::model($this->relation, true);
+    }
+
+    /**
+     * Get the the alias of the `field` entry,
+     * that current `field` entry is positioned after
+     * among all `field` entries having same `entityId`
+     * according to the values `move` prop
+     *
+     * @param string $withinField
+     * @param null|string $after
+     * @return string|Indi_Db_Table_Row
+     */
+    public function position($withinField = 'entityId', $after = null) {
+
+        // Get ordered fields aliases
+        $fieldA_alias = Indi::db()->query(
+            'SELECT `alias` FROM `:p` :p ORDER BY `move`',
+            $this->_table,
+            rif($withinField, ' WHERE `$1` = "' . $this->$withinField . '"')
+        )->fetchAll(PDO::FETCH_COLUMN);
+
+        // Get current position
+        $currentIdx = array_flip($fieldA_alias)[$this->alias];
+
+        // If $after arg is null or not given
+        if ($after === null) {
+
+            // If position of current field is non-zero, e.g. is not first
+            // return alias of field, that current field is positioned after,
+            // else return empty string, indicating that current field is on top
+            return $currentIdx ? $fieldA_alias[$currentIdx - 1] : '';
+
+        // Else do positioning
+        } else {
+
+            // If current field should moved to top
+            if ($after === '') {
+
+                // If current field is already on top - return
+                if (!$currentIdx) return $this;
+
+                // Else set direction to 'up', and qty of $this->move() calls
+                $direction = 'up'; $count = $currentIdx;
+
+            // Else
+            } else {
+
+                // Get required position of current field
+                $mustbeIdx = array_flip($fieldA_alias)[$after] + 1;
+
+                // If it's already at required position - do nothing
+                if ($mustbeIdx == $currentIdx) return $this;
+
+                // Set direction
+                $direction = $mustbeIdx > $currentIdx ? 'down' : 'up';
+
+                // Set count of $this->move() calls
+                $count = abs($currentIdx - $mustbeIdx);
+
+                // If $durection is  'down' - decrement $count
+                if ($direction == 'down') $count --;
+            }
+
+            // Do positioning
+            for ($i = 0; $i < $count; $i++) $this->move($direction);
+
+            // Return this
+            return $this;
+        }
+    }
+
+    /**
+     * Do positioning, if $this->_system['move'] is set
+     */
+    public function onSave() {
+
+        // If no _system['move'] defined - return
+        if (!array_key_exists('move', $this->_system)) return;
+
+        // Get field, that current field should be moved after
+        $after = $this->_system['move']; unset($this->_system['move']);
+
+        // Position field for it to be after field, specified by $this->_system['move']
+        $this->position('entityId', $after);
     }
 }

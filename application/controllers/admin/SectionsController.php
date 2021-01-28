@@ -112,6 +112,25 @@ class Admin_SectionsController extends Indi_Controller_Admin_Exportable {
         // Call parent
         $this->callParent();
     }
+    /**
+     * Append sort direction clickable icon to the sort field
+     *
+     * @param $item
+     */
+    public function adjustGridDataItem(&$item) {
+
+        // Add icon for `defaultSortField` prop
+        if ($item['defaultSortField']
+            && $info = Indi::rexm('~<span (.*?) title="(.*?)"></span>$~', $item['defaultSortDirection'])) {
+
+            // Setup jump
+            $item['_system']['jump']['defaultSortField'] = [[
+                'href' => 'cell:defaultSortDirection',
+                'ibox' => $info[1],
+                'over' => $info[2]
+            ]];
+        }
+    }
 
     /**
      * 1.Hide default values for `extendsPhp` and `extendsJs` props, to prevent it from creating a mess in eyes
@@ -147,6 +166,18 @@ class Admin_SectionsController extends Indi_Controller_Admin_Exportable {
                 if ($parent != $item['extendsPhp']) $item['_system']['php-error']
                     = sprintf('Файл php-контроллера существует, но в нем родительский класс указан как %s', $parent);
             }
+
+            // Add icon for `extendsPhp` prop
+            if (($_ = $item['extendsPhp']) != 'Indi_Controller_Admin') $item['_render']['extendsPhp']
+                = '<img src="resources/images/icons/btn-icon-php-parent.png" class="i-cell-img">' . $_;
+
+            // Add icon for `extendsJs` prop
+            if (($_ = $item['extendsJs']) != 'Indi.lib.controller.Controller') $item['_render']['extendsJs']
+                = '<img src="resources/images/icons/btn-icon-js-parent.png" class="i-cell-img">' . $_;
+
+            // Add icon for `filter` prop
+            if ($_ = $item['filter']) $item['_render']['filter']
+                = '<img src="resources/images/icons/btn-icon-filter.png" class="i-cell-img">' . $_;
 
             // Get js-controller file name
             $js = DOC . STD . '/' . $dir[$item['$keys']['type']] . '/js/admin/app/controller/' . $item['alias']. '.js';
@@ -196,7 +227,7 @@ class Admin_SectionsController extends Indi_Controller_Admin_Exportable {
      * Created copies of selected sections and attach under section, chosen within prompt-window
      * Caution! Do not use it, it's not completed and works properly only in specific situations
      */
-    public function duplicateAction() {
+    public function copyAction() {
 
         // Get selected entries ids
         $sectionId_disabled = $this->selected->column('id');
@@ -296,6 +327,71 @@ class Admin_SectionsController extends Indi_Controller_Admin_Exportable {
             jflush(true, 'Copied');
 
         // Else flush failure
-        } else jflush(false, 'Duplication cancelled');
+        } else jflush(false, 'Copying cancelled');
+    }
+
+    /**
+     * Auto-create `grid` entries for `section` entry, if it's a new entry or `entityId` was changed
+     */
+    public function postSave() {
+
+        // If entityId was not changed - return
+        if (!in('entityId', $this->row->affected())) return;
+
+        // Delete old grid info when associated entity has changed
+        m('Grid')->fetchAll('`sectionId` = "' . $this->id . '"')->delete();
+
+        // Set up new grid, if associated entity remains not null, event after change
+        if (!$this->row->entityId) return;
+
+        // Get entity fields as grid columns candidates
+        $fields = m('Field')->fetchAll('`entityId` = "' . $this->row->entityId . '"', '`move`')->toArray();
+
+        // If no fields - return
+        if (!count($fields)) return;
+
+        // Declare exclusions array, because not each entity field will have corresponding column in grid
+        $exclusions = array();
+
+        // Exclude tree column, if exists
+        if ($tc = m($this->row->entityId)->treeColumn()) $exclusions[] = $tc;
+
+        // Exclude columns that have controls of several types, listed below
+        for ($i = 0; $i < count($fields); $i++) {
+            // 13 - html-editor
+            if (in_array($fields[$i]['elementId'], array(13))) {
+                if ($fields[$i]['elementId'] == 6 && $fields[$i]['alias'] == 'title') {} else {
+                    $exclusions[] = $fields[$i]['alias'];
+                }
+            }
+        }
+
+        // Exclude columns that are links to parent sections
+        $parentSectionId = $this->row->sectionId;
+        do {
+            $parentSection = t()->model->fetchRow('`id` = "' . $parentSectionId . '"');
+            if ($parentSection && $parentEntity = $parentSection->foreign('entityId')){
+                for ($i = 0; $i < count($fields); $i++) {
+                    if ($fields[$i]['alias'] == $parentEntity->table . 'Id' && $fields[$i]['relation'] == $parentEntity->id) {
+                        $exclusions[] = $fields[$i]['alias'];
+                    }
+                }
+                $parentSectionId = $parentSection->sectionId;
+            }
+        } while ($parentEntity);
+
+        // Create grid, stripping exclusions from final grid column list
+        $j = 0; $gridId = 0;
+        for ($i = 0; $i < count($fields); $i++) {
+            if (!in_array($fields[$i]['alias'], $exclusions)) {
+                $gridR = m('Grid')->createRow();
+                $gridR->gridId = $fields[$i]['elementId'] == 16 ? 0 : $gridId;
+                $gridR->sectionId = $this->row->id;
+                $gridR->fieldId = $fields[$i]['id'];
+                $gridR->save();
+                $j++;
+                if ($fields[$i]['elementId'] == 16) $gridId = $gridR->id;
+            }
+        }
     }
 }
