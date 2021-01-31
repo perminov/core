@@ -54,7 +54,7 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
         $queueTaskR->stage = 'queue';
         $queueTaskR->state = 'progress';
         $queueTaskR->queueState = 'progress';
-        $queueTaskR->basicUpdate();
+        $queueTaskR->basicUpdate(false, false);
 
         // Get source and target languages
         $params = json_decode($queueTaskR->params);
@@ -173,7 +173,7 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
                     $queueChunkR->queueSize ++; $queueChunkR->basicUpdate();
 
                     // Increment `queueSize` prop on `queueTask` entry and save it
-                    $queueTaskR->queueSize ++; $queueTaskR->basicUpdate();
+                    $queueTaskR->queueSize ++; $queueTaskR->basicUpdate(false, false);
 
                     // Increment $deduct
                     $deduct ++;
@@ -203,7 +203,7 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
         $queueTaskR->stage = 'apply';
         $queueTaskR->state = 'progress';
         $queueTaskR->applyState = 'progress';
-        $queueTaskR->basicUpdate();
+        $queueTaskR->basicUpdate(false, false);
 
         // Get params
         $params = json_decode($queueTaskR->params, true);
@@ -275,7 +275,7 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
                 $queueChunkR->applySize ++; $queueChunkR->basicUpdate();
 
                 // Increment `applySize` prop on `queueTask` entry and save it
-                $queueTaskR->applySize ++; $queueTaskR->basicUpdate();
+                $queueTaskR->applySize ++; $queueTaskR->basicUpdate(false,false);
 
             }, $where, '`id` ASC');
 

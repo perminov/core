@@ -743,24 +743,39 @@ class Indi_Db_Table_Row implements ArrayAccess
             // If $event is 'affected'
             if ($event == 'affected') {
 
-                // Get IDs of affected fields involved by context
-                $fieldIds = array_intersect($fieldIdA_affected, ar($realtimeR->fields));
-
-                // Get aliases of affected fields involved by context
-                $dataColumns = [];
-                foreach ($fieldIds as $fieldId)
-                    if ($field = $this->field($fieldId)->alias)
-                        $dataColumns[] = $field;
-
-                // Prepare grid data, however with no adjustments that could be applied at section/controller-level
-                $data = [$this->toGridData($dataColumns)];
-
                 // Prepare blank data and group it by channel and context
                 $byChannel[$channel][$context] = [
                     'table' => $this->_table,
-                    'entry' => $this->id,
-                    'affected' => array_shift($data)
+                    'entry' => $this->id
                 ];
+
+                // If at least one of affected fields stand behind of a grid column, having `rowReqIfAffected` = 'y'
+                if (array_intersect($fieldIdA_affected, ar(json_decode($realtimeR->scope)->rowReqIfAffected))) {
+
+                    // It means that such column's cell content IS INVOLVED in the process
+                    // of rendering content for at least one other column's cell within same grid,
+                    // and in that case we give a signal for whole row to be reloaded rather than
+                    // sending only changed cells data
+                    $byChannel[$channel][$context]['affected'] = true;
+
+                // Else
+                } else {
+
+                    // Get IDs of affected fields involved by context
+                    $fieldIds = array_intersect($fieldIdA_affected, ar($realtimeR->fields));
+
+                    // Get aliases of affected fields involved by context
+                    $dataColumns = [];
+                    foreach ($fieldIds as $fieldId)
+                        if ($field = $this->field($fieldId)->alias)
+                            $dataColumns[] = $field;
+
+                    // Prepare grid data, however with no adjustments that could be applied at section/controller-level
+                    $data = [$this->toGridData($dataColumns)];
+
+                    // Prepare blank data and group it by channel and context
+                    $byChannel[$channel][$context]['affected'] = array_shift($data);
+                }
 
             // Else if $event is 'deleted'
             } else if ($event == 'deleted') {
