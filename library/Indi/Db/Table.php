@@ -309,7 +309,7 @@ class Indi_Db_Table
             // the SQL_CALC_FOUND_ROWS flag
             if (!is_null($page) || !is_null($count)) $calcFoundRows = 'SQL_CALC_FOUND_ROWS ';
         } else {
-            $limit = false;
+            $limit = $pgupLast = false;
         }
 
         // Build the query
