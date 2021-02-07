@@ -1,5 +1,25 @@
 <?php
 class Indi_Controller_Migrate extends Indi_Controller {
+    public function rowReqIfAffectedAction() {
+        field('grid', 'rowReqIfAffected', [
+          'title' => 'При изменении ячейки обновлять всю строку',
+          'columnTypeId' => 'ENUM',
+          'elementId' => 'combo',
+          'defaultValue' => 'n',
+          'move' => 'profileIds',
+          'relation' => 'enumset',
+          'storeRelationAbility' => 'one',
+        ]);
+        enumset('grid', 'rowReqIfAffected', 'n', ['title' => '<span class="i-color-box" style="background: lightgray;"></span>Нет', 'move' => '']);
+        enumset('grid', 'rowReqIfAffected', 'y', ['title' => '<span class="i-color-box" style="background: blue;"></span> Да', 'move' => 'n']);
+        grid('grid', 'rowReqIfAffected', true);
+        section('grid', ['multiSelect' => '1']);
+        grid('sections', 'extendsPhp', ['rowReqIfAffected' => 'y']);
+        grid('sections', 'extendsJs', ['rowReqIfAffected' => 'y']);
+        grid('sections', 'extendsJs', ['rowReqIfAffected' => 'y']);
+        grid('sections', 'defaultSortDirection', ['rowReqIfAffected' => 'y']);
+        die('ok');
+    }
     public function syncSectionsAction() {
         m('Section')->fetchAll('`type` = "s"')->delete();
         section('configuration', ['title' => 'Конфигурация', 'type' => 's']);
