@@ -32,21 +32,31 @@ class Indi_Controller_Migrate extends Indi_Controller {
         grid('sections', 'type', ['gridId' => 'params', 'editor' => 1]);
         grid('sections', 'extends', ['alterTitle' => 'Привязка к коду', 'gridId' => 'params']);
         grid('sections', 'alias', ['gridId' => 'extends', 'editor' => 1]);
-        grid('sections', 'extendsPhp', ['gridId' => 'extends', 'editor' => 1, 'width' => 50]);
-        grid('sections', 'extendsJs', ['gridId' => 'extends', 'editor' => 1, 'width' => 50]);
+        grid('sections', 'extendsPhp', [
+            'gridId' => 'extends',
+            'editor' => 1,
+            'width' => 50,
+            'rowReqIfAffected' => 'y',
+        ]);
+        grid('sections', 'extendsJs', [
+            'gridId' => 'extends',
+            'editor' => 1,
+            'width' => 50,
+            'rowReqIfAffected' => 'y',
+        ]);
         grid('sections', 'store', true);
         grid('sections', 'data', ['alterTitle' => 'Источник', 'gridId' => 'store']);
         grid('sections', 'entityId', ['alterTitle' => 'Сущность', 'gridId' => 'data']);
         grid('sections', 'filter', ['gridId' => 'data', 'editor' => 1]);
-        grid('sections', 'disableAdd', ['alterTitle' => 'ЗСН', 'gridId' => 'data']);
+        grid('sections', 'disableAdd', ['gridId' => 'data']);
         grid('sections', 'load', ['gridId' => 'store']);
-        grid('sections', 'rowsetSeparate', ['alterTitle' => 'РПД', 'gridId' => 'load', 'tooltip' => 'Режим подгрузки данных']);
+        grid('sections', 'rowsetSeparate', ['gridId' => 'load', 'tooltip' => 'Режим подгрузки данных']);
         grid('sections', 'defaultSortField', ['gridId' => 'load', 'editor' => 1]);
         grid('sections', 'rowsOnPage', ['gridId' => 'load', 'editor' => 1]);
-        grid('sections', 'defaultSortDirection', ['toggle' => 'h', 'gridId' => 'load']);
+        grid('sections', 'defaultSortDirection', ['toggle' => 'h', 'gridId' => 'load', 'rowReqIfAffected' => 'y']);
         grid('sections', 'display', ['alterTitle' => 'Отображение', 'gridId' => 'store']);
-        grid('sections', 'multiSelect', ['alterTitle' => 'ВБО', 'gridId' => 'display']);
-        grid('sections', 'rownumberer', ['alterTitle' => 'ВН', 'gridId' => 'display']);
+        grid('sections', 'multiSelect', ['gridId' => 'display']);
+        grid('sections', 'rownumberer', ['gridId' => 'display']);
         grid('sections', 'groupBy', ['gridId' => 'display', 'editor' => 1]);
         grid('sections', 'tileField', ['toggle' => 'h', 'gridId' => 'display']);
         grid('sections', 'tileThumb', ['toggle' => 'h', 'gridId' => 'display']);
@@ -90,6 +100,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
             'groupBy' => 'group',
             'rowsetSeparate' => 'no',
             'roleIds' => '1',
+            'multiSelect' => '1',
         ]);
         section2action('grid','index', ['profileIds' => '1']);
         section2action('grid','form', ['profileIds' => '1']);
@@ -114,6 +125,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
         grid('grid', 'accesss', true);
         grid('grid', 'access', ['alterTitle' => 'Кому', 'gridId' => 'accesss', 'editor' => 1]);
         grid('grid', 'profileIds', ['gridId' => 'accesss', 'editor' => 1]);
+        grid('grid', 'rowReqIfAffected', true);
         section('alteredFields', [
             'sectionId' => 'sections',
             'entityId' => 'alteredField',
@@ -351,6 +363,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
             'sectionId' => 'configuration',
             'entityId' => 'columnType',
             'title' => 'Столбцы',
+            'toggle' => 'n',
             'type' => 's',
             'roleIds' => '1',
         ]);
@@ -366,6 +379,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
             'sectionId' => 'configuration',
             'entityId' => 'action',
             'title' => 'Действия',
+            'toggle' => 'n',
             'extendsPhp' => 'Indi_Controller_Admin_Exportable',
             'type' => 's',
             'roleIds' => '1',
@@ -391,6 +405,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
             'sectionId' => 'configuration',
             'entityId' => 'element',
             'title' => 'Элементы',
+            'toggle' => 'n',
             'type' => 's',
             'roleIds' => '1',
         ]);
@@ -446,7 +461,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
         grid('lang', 'adminCustomData', ['gridId' => 'adminCustom']);
         grid('lang', 'adminCustomTmpl', ['gridId' => 'adminCustom']);
         grid('lang', 'move', true);
-        filter('lang', 'state', true);
+        filter('lang', 'state', ['defaultValue' => 'smth']);
         filter('lang', 'toggle', true);
         section('notices', [
             'sectionId' => 'configuration',
@@ -784,7 +799,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
         entity('action', ['title' => 'Действие', 'system' => 'y']);
         field('action', 'title', [
             'title' => 'Наименование',
-            'columnTypeId' => 'VARCHAR(255)',
+            'columnTypeId' => 'TEXT',
             'elementId' => 'string',
             'move' => '',
             'mode' => 'required',
@@ -889,7 +904,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
         ]);
         field('section2action', 'title', [
             'title' => 'Auto title',
-            'columnTypeId' => 'VARCHAR(255)',
+            'columnTypeId' => 'TEXT',
             'elementId' => 'string',
             'move' => 'move',
             'mode' => 'hidden',
@@ -897,7 +912,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
         consider('section2action', 'title', 'actionId', ['foreign' => 'title', 'required' => 'y']);
         field('section2action', 'rename', [
             'title' => 'Переименовать',
-            'columnTypeId' => 'VARCHAR(255)',
+            'columnTypeId' => 'TEXT',
             'elementId' => 'string',
             'move' => 'title',
         ]);
@@ -1021,7 +1036,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
             'move' => '',
             'relation' => 'field',
             'storeRelationAbility' => 'one',
-            'mode' => 'required',
+            'mode' => 'readonly',
         ]);
         field('enumset', 'title', [
             'title' => 'Наименование',
@@ -2587,6 +2602,17 @@ class Indi_Controller_Migrate extends Indi_Controller {
             'relation' => 'profile',
             'storeRelationAbility' => 'many',
         ]);
+        field('grid', 'rowReqIfAffected', [
+            'title' => 'При изменении ячейки обновлять всю строку',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'n',
+            'move' => 'profileIds',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+        ]);
+        enumset('grid', 'rowReqIfAffected', 'n', ['title' => '<span class="i-color-box" style="background: lightgray;"></span>Нет', 'move' => '']);
+        enumset('grid', 'rowReqIfAffected', 'y', ['title' => '<span class="i-color-box" style="background: blue;"></span> Да', 'move' => 'n']);
         entity('grid', ['titleFieldId' => 'fieldId']);
         entity('entity', ['title' => 'Сущность', 'system' => 'y', 'useCache' => '1']);
         field('entity', 'title', [
@@ -3052,8 +3078,6 @@ class Indi_Controller_Migrate extends Indi_Controller {
         enumset('queueItem', 'stage', 'items', ['title' => 'Добавлен', 'move' => '']);
         enumset('queueItem', 'stage', 'queue', ['title' => 'Обработан', 'move' => 'items']);
         enumset('queueItem', 'stage', 'apply', ['title' => 'Применен', 'move' => 'queue']);
-        entity('queueItem', [
-        ]);
         entity('element', ['title' => 'Элемент управления', 'system' => 'y']);
         field('element', 'title', [
             'title' => 'Наименование',
