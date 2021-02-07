@@ -503,7 +503,8 @@ class Entity_Row extends Indi_Db_Table_Row {
 
         // Build expression, that will now apply $deferred props,
         // because underlying fields creation expressions are already prepared
-        $lineA[] = "entity('" . $this->table . "', " . $this->_ctor($deferred, true) . ");";
+        if (is_array($deferred = $this->_ctor($deferred, true)))
+            $lineA[] = "entity('" . $this->table . "', " . $deferred . ");";
 
         // Return newline-separated list of creation expressions
         return im($lineA, "\n");
