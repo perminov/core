@@ -13,6 +13,12 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
 
         // Call parent
         parent::__construct($config);
+
+        // Pull params
+        if (!array_key_exists('params', $this->_temporary)) $this->_temporary['params'] = array_merge(
+            Indi_Db::$_cfgValue['default']['element'][$this->elementId] ?: [],
+            Indi_Db::$_cfgValue['certain']['field'][$this->id] ?: []
+        );
     }
 
     /**
@@ -155,10 +161,10 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
      */
     public function deleteColumn() {
 
-        // If current field does not have a column
-		if (!$this->columnTypeId) return;
+        // If current field does not have a column - return
+		if (!$this->columnTypeId || $this->entry) return;
 
-        // Drop that column
+        // Drop column
         Indi::db()->query('ALTER TABLE `' . $this->foreign('entityId')->table . '` DROP `' . $this->alias . '`');
 	}
 
@@ -301,6 +307,45 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
             $table = Indi::model($this->entityId)->table(true);
         }
 
+        // If current field is a cfgField
+        if ($this->entry) {
+
+            // Get the column type row
+            $columnTypeR = $this->foreign('columnTypeId');
+
+            // If column type is SET or ENUM
+            if (preg_match('/^ENUM|SET$/', $columnTypeR->type))
+                list($enumsetA, $enumsetAppendA) = $this->_setupEnumset($columnTypeR, $table);
+
+            // Setup `defaultValue` for current field, but only if it's type is not
+            // BLOB or TEXT, as these types do not support default value definition
+            if (!preg_match('/^BLOB|TEXT$/', $columnTypeR->type)) $this->_defaultValue($columnTypeR);
+
+            // If field column type was ENUM or SET, but now it is not -
+            // we should delete rows, related to current field, from `enumset` table
+            $this->_clearEnumset($columnTypeR);
+
+            // If there was a relation, but now there is no - we perform a number of 'reset' adjustments, that aim to
+            // void values of all properties, that are certainly not used now, as field does not store foreign keys no more
+            $this->_resetRelation($columnTypeR);
+
+            // If store relation ability changed to  'many'
+            // And if field had it's own column within database table, and still has
+            // And if all these changes are performed within the same entity
+            // - Remove 0-values from column, as 0-values are not allowed
+            //   for fields, that have storeRelationAbility = 'many'
+            $this->_clear0($table);
+
+            // Call parent
+            $return = $this->callParent();
+
+            // If earlier we detected some values, that should be inserted to `enumset` table - insert them
+            $this->_enumsetAppend($enumsetAppendA);
+
+            // Return
+            return $return;
+        }
+
         // We should add a new column in database table in 3 cases:
         // 1. Field was moved from one entity to another, and field now has non-zero
         //    columnTypeId property, and does not matter whether is had it before or not
@@ -350,7 +395,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
                 $sql[] = 'ALTER TABLE `' . $table . '` CHANGE COLUMN `' . $this->_original['alias'] . '` `' . $this->alias . '`';
         }
 
-        // If no query builded - do a standard save
+        // If no query built - do a standard save
         if (!$sql) {
 
             // If $deleteUploadedFiles flag is set to true - call deleteUploadedFiles() method
@@ -385,51 +430,14 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
         // Add the primary type definition to a query
         $sql[] = $columnTypeR->type;
 
-        // If column type is SET or ENUM - add the secondary type definition
+        // If column type is SET or ENUM
         if (preg_match('/^ENUM|SET$/', $columnTypeR->type)) {
 
-            // Get the column type row, representing field's column before type change (original column)
-            $curTypeR = Indi::model('ColumnType')->fetchRow('`id` = "' . $this->_original['columnTypeId'] . '"');
-
-            // Get the existing enumset values
-            $enumsetA = $this->id ? $this->nested('enumset')->column('alias'): array();
-
-            // Get the array of default values
-            $defaultValueA = preg_match(Indi::rex('php'), $this->defaultValue)
-                ? array('')
-                : explode(',', $this->defaultValue);
-
-            // Get the values, that should be added to the list of possible values
-            $enumsetAppendA = array_diff($defaultValueA, $enumsetA);
-
-            // If we are converting BOOLEAN to ENUM|SET, ensure both 0 and 1 will be
-            // 1. mentioned in ALTER TABLE query
-            // 2. insterted into `enumset` table
-            if ($curTypeR->type == 'BOOLEAN') $enumsetAppendA = array(I_NO => 0, I_YES => 1);
-
-            // Else
-            else if ($curTypeR->id && !in($curTypeR->type, 'ENUM,SET') && $columnTypeR->type == 'ENUM') {
-
-                // Get values
-                $valueA = Indi::db()->query('
-                    SELECT DISTINCT `' . $this->_original['alias'] . '` FROM `' . $table . '`
-                ')->fetchAll(PDO::FETCH_COLUMN);
-
-                // Set default value
-                if (!$this->defaultValue) $this->defaultValue = $valueA[0];
-
-                // Build key-value pairs
-                $enumsetAppendA = array_combine($valueA, $valueA);
-            }
-
-            // Get the final list of possible values
-            $enumsetA = array_merge($enumsetA, $enumsetAppendA);
+            // Set $this->relation to 6, and get two enumset lists, that will be used further
+            list($enumsetA, $enumsetAppendA) = $this->_setupEnumset($columnTypeR, $table);
 
             // Append the list of possible values to sql column type definition
             $sql[] = '("' . implode('","', $enumsetA) . '")';
-
-            // Force `relation` property to be '6' - id of enumset `entity`
-            $this->relation = 6;
         }
 
         // Add the collation definition, if column type supports it
@@ -445,226 +453,8 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
         // BLOB or TEXT, as these types do not support default value definition
         if (!preg_match('/^BLOB|TEXT$/', $columnTypeR->type)) {
 
-            // Trim the whitespaces and replace double quotes from `defaultValue` property,
-            // for proper check of defaultValue compability to mysql column type
-            $this->defaultValue = trim(str_replace('"', '&quot;', $this->defaultValue));
-
-            // Check if default value contains php expressions
-            $php = preg_match(Indi::rex('php'), $this->defaultValue);
-
-            // Initial setup the default value for use in sql query
-            $defaultValue = $this->defaultValue;
-
-            // If column type is VARCHAR(255)
-            if ($columnTypeR->type == 'VARCHAR(255)') {
-
-                // If $php is true - set $defaultValue as empty string
-                if ($php) $defaultValue = '';
-
-                // Else if store relation ability changed to 'many' and default value contains zeros
-                else if ($this->_modified['storeRelationAbility'] == 'many' && preg_match('/,0/', ',' . $defaultValue))
-
-                    // Strip zeros from both $defaultValue and $this->defaultValue
-                    $this->defaultValue = $defaultValue = ltrim(preg_replace('/,0/', '', ',' . $defaultValue), ',');
-
-            // Else if column type is INT(11)
-            } else if ($columnTypeR->type == 'INT(11)') {
-
-                // If $php is true, or $defaultValue is not a positive integer
-                if ($php || !preg_match(Indi::rex('int11'), $defaultValue)) {
-
-                    // If $defaultValue does not contain php expressions and
-                    // is not a positive integer - we set field's `defaultValue` as '0'
-                    if (!$php) $this->defaultValue = '0';
-
-                    // Set $defaultValue as '0'
-                    $defaultValue = '0';
-                }
-
-            // Else if column type is DOUBLE(7,2)
-            } else if ($columnTypeR->type == 'DOUBLE(7,2)') {
-
-                // If $php is true, or default value does not match the column type signature
-                if ($php || !preg_match(Indi::rex('double72'), $defaultValue)) {
-
-                    // If $defaultValue does not contain php expressions and
-                    // is not a positive integer - we set field's `defaultValue` as '0'
-                    if (!$php) $this->defaultValue = '0';
-
-                    // Set $defaultValue as '0'
-                    $defaultValue = '0';
-                }
-
-            // Else if column type is DECIMAL(11,2)
-            } else if ($columnTypeR->type == 'DECIMAL(11,2)') {
-
-                // If $php is true, or default value does not match the column type signature
-                if ($php || !preg_match(Indi::rex('decimal112'), $defaultValue)) {
-
-                    // If $defaultValue does not contain php expressions and
-                    // is not a positive integer - we set field's `defaultValue` as '0.00'
-                    if (!$php) $this->defaultValue = '0.00';
-
-                    // Set $defaultValue as '0'
-                    $defaultValue = '0.00';
-                }
-
-            // Else if column type is DECIMAL(14,3)
-            } else if ($columnTypeR->type == 'DECIMAL(14,3)') {
-
-                // If $php is true, or default value does not match the column type signature
-                if ($php || !preg_match(Indi::rex('decimal143'), $defaultValue)) {
-
-                    // If $defaultValue does not contain php expressions and
-                    // is not a positive integer - we set field's `defaultValue` as '0.000'
-                    if (!$php) $this->defaultValue = '0.000';
-
-                    // Set $defaultValue as '0.000'
-                    $defaultValue = '0.000';
-                }
-
-            // Else if column type is DATE
-            } else if ($columnTypeR->type == 'DATE') {
-
-                // If $php is true or default value is not a date in format YYYY-MM-DD
-                if ($php || !preg_match(Indi::rex('date'), $defaultValue)) {
-
-                    // If $defaultValue does not contain php expressions and
-                    // is not a date - we set field's `defaultValue` as '0000-00-00'
-                    if (!$php) $this->defaultValue = '0000-00-00';
-
-                    // Set $defaultValue as '0000-00-00'
-                    $defaultValue = '0000-00-00';
-
-                // Else if $default value is not '0000-00-00'
-                } else if ($defaultValue != '0000-00-00') {
-
-                    // Extract year, month and day from date
-                    list($year, $month, $day) = explode('-', $defaultValue);
-
-                    // If $defaultValue is not a valid date - set it and field's `defaultValue `as '0000-00-00'
-                    if (!checkdate($month, $day, $year)) $this->defaultValue = $defaultValue = '0000-00-00';
-                }
-
-            // Else if column type is YEAR
-            } else if ($columnTypeR->type == 'YEAR') {
-
-                // If $php is true or default value does not match the YEAR column type format - set it as '0000'
-                if ($php || !preg_match(Indi::rex('year'), $defaultValue)) {
-
-                    // If $defaultValue does not contain php expressions and
-                    // is not a year - we set field's `defaultValue` as '0000'
-                    if (!$php) $this->defaultValue = '0000';
-
-                    // Set $defaultValue as '0000'
-                    $defaultValue = '0000';
-                }
-
-            // Else if column type is TIME
-            } else if ($columnTypeR->type == 'TIME') {
-
-                // If $php is true or default value is not a time in format HH:MM:SS - set it as '00:00:00'. Otherwise
-                if ($php || !preg_match(Indi::rex('time'), $defaultValue)) {
-
-                    // If $defaultValue does not contain php expressions and
-                    // is not a time - we set field's `defaultValue` as '00:00:00'
-                    if (!$php) $this->defaultValue = '00:00:00';
-
-                    // Set $defaultValue as '00:00:00'
-                    $defaultValue = '00:00:00';
-
-                } else {
-
-                    // Extract hours, minutes and seconds from $defaultValue
-                    list($time['hour'], $time['minute'], $time['second']) = explode(':', $defaultValue);
-
-                    // If any of hours, minutes or seconds values exceeds
-                    // their possible values - set $defaultValue and field's `defaultValue` as '00:00:00'
-                    if ($time['hour'] > 23 || $time['minute'] > 59 || $time['second'] > 59)
-                        $this->defaultValue = $defaultValue = '00:00:00';
-                }
-
-            // Else if column type is DATETIME
-            } else if ($columnTypeR->type == 'DATETIME') {
-
-                // If $php is true or $defaultValue is not a datetime in format YYYY-MM-DD HH:MM:SS - set it as '0000-00-00 00:00:00'
-                if ($php || !preg_match(Indi::rex('datetime'), $defaultValue)) {
-
-                    // If $defaultValue does not contain php expressions and
-                    // is not a datetime - we set field's `defaultValue` as '0000-00-00 00:00:00'
-                    if (!$php) $this->defaultValue = '0000-00-00 00:00:00';
-
-                    // Set $defaultValue as '0000-00-00 00:00:00'
-                    $defaultValue = '0000-00-00 00:00:00';
-
-                // Else if $defaultValue is not '0000-00-00 00:00:00'
-                } else if ($defaultValue != '0000-00-00 00:00:00') {
-
-                    // Extract date and time from $defaultValue
-                    list($date, $time) = explode(' ', $defaultValue);
-
-                    // Extract year, month and day from $defaultValue's date
-                    list($year, $month, $day) = explode('-', $date);
-
-                    // If $defaultValue's date is not a valid date - set $defaultValue as '0000-00-00 00:00:00'. Else
-                    if (!checkdate($month, $day, $year)) $this->defaultValue = $defaultValue = '0000-00-00 00:00:00'; else {
-
-                        // Extract hour, minute and second from $defaultValue's time
-                        list($hour, $minute, $second) = explode(':', $time);
-
-                        // If any of hour, minute or second values exceeds their
-                        // possible - set $defaultValue and field's `defaultValue` as '0000-00-00 00:00:00'
-                        if ($hour > 23 || $minute > 59 || $second > 59)
-                            $this->defaultValue = $defaultValue = '0000-00-00 00:00:00';
-                    }
-                }
-
-            // Else if column type is ENUM
-            } else if ($columnTypeR->type == 'ENUM') {
-
-                // If $php is true, set $defaultValue as empty string
-                if ($php) $defaultValue = '';
-
-            // Else if column type is SET
-            } else if ($columnTypeR->type == 'SET') {
-
-                // If $php is true, set $defaultValue as empty string
-                if ($php) $defaultValue = '';
-
-            // Else if column type is BOOLEAN
-            } else if ($columnTypeR->type == 'BOOLEAN') {
-
-                // If $php is true or $devaultValue is not 0 or 1 - set it as 0
-                if ($php || !preg_match(Indi::rex('bool'), $defaultValue)) {
-
-                    // If $defaultValue does not contain php expressions and
-                    // is not a boolean - we set field's `defaultValue` as '0'
-                    if (!$php) $this->defaultValue = '0';
-
-                    // Set $defaultValue as '0'
-                    $defaultValue = '0';
-                }
-
-            // Else if column type is VARCHAR(10) we assume that it should be a color in format 'hue#rrggbb'
-            } else if ($columnTypeR->type == 'VARCHAR(10)') {
-
-                // If $php is true, or $defaultValue is not a color in format either '#rrggbb' or 'hue#rrggbb'
-                if ($php || (!preg_match(Indi::rex('rgb'), $defaultValue) && !preg_match(Indi::rex('hrgb'), $defaultValue))) {
-
-                    // If $defaultValue does not contain php expressions and
-                    // is not a color in format either '#rrggbb' or 'hue#rrggbb'
-                    // - set field's `defaultValue` as empty string
-                    if (!$php) $this->defaultValue = '';
-
-                    // Set $defaultValue as empty string
-                    $defaultValue = '';
-
-                // Else if $defaultValue is a color in format '#rrggbb'
-                } else if (preg_match(Indi::rex('rgb'), $defaultValue))
-
-                    // We prepend it with hue number
-                    $defaultValue = hrgb($defaultValue);
-            }
+            // Setup $defaultValue along with setting $this->defaultValue (not always the same)
+            $defaultValue = $this->_defaultValue($columnTypeR);
 
             // Append sql DEFAULT expression to query
             $sql[] = 'DEFAULT "' . $defaultValue . '"';
@@ -689,104 +479,34 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
 
         // If field column type was ENUM or SET, but now it is not -
         // we should delete rows, related to current field, from `enumset` table
-        if (!preg_match('/^ENUM|SET$/', $columnTypeR->type)
-            && preg_match('/^ENUM|SET$/', Indi::model('ColumnType')
-                ->fetchRow('`id` = "' . $this->_original['columnTypeId'] . '"')->type))
-                    $this->clearEnumset();
+        $this->_clearEnumset($columnTypeR);
+
+        // If there was a relation, but now there is no - we perform a number of 'reset' adjustments, that aim to
+        // void values of all properties, that are certainly not used now, as field does not store foreign keys no more
+        $this->_resetRelation($columnTypeR);
+
+        // If store relation ability changed to  'many'
+        // And if field had it's own column within database table, and still has
+        // And if all these changes are performed within the same entity
+        // - Remove 0-values from column, as 0-values are not allowed
+        //   for fields, that have storeRelationAbility = 'many'
+        $this->_clear0($table);
+
+        // If $deleteUploadedFiles flag is set to true - call deleteUploadedFiles()
+        if ($deleteUploadedFiles) $this->deleteUploadedFiles();
 
         // Remember original data before call parent::save(), as this data
         // will be used bit later for proper column indexes adjustments
         $original = $this->_original;
 
-        // If there was a relation, but now there is no - we perform a number of 'reset' adjustments, that aim to
-        // void values of all properties, that are certainly not used now, as field does not store foreign keys no more
-        if (array_key_exists('storeRelationAbility', $this->_modified) && $this->_modified['storeRelationAbility'] == 'none') {
-
-            // If control element was radio or multicheck - set it as string
-            if (preg_match('/^radio|multicheck$/', $this->foreign('elementId')->alias))
-                $this->elementId = Indi::model('Element')->fetchRow('`alias` = "string"')->id;
-
-            // Else if control element was combo, and column type is not BOOLEAN - set control element as string also
-            else if ($this->foreign('elementId')->alias == 'combo' && $columnTypeR->type != 'BOOLEAN')
-                $this->elementId = Indi::model('Element')->fetchRow('`alias` = "string"')->id;
-
-            // If column type was ENUM or SET - set it as VARCHAR(255)
-            if (preg_match('/^ENUM|SET$/', $columnTypeR->type))
-                $this->columnTypeId = Indi::model('ColumnType')->fetchRow('`type` = "VARCHAR(255)"')->id;
-
-            // Setup `relation` as 0
-            $this->relation = 0;
-
-            // Setup `filter` as an empty string
-            $this->filter = '';
-        }
-
-        // If store relation ability changed to  'many'
-        if ($this->_modified['storeRelationAbility'] == 'many') {
-
-            // If field had it's own column within database table, and still has
-            if ($this->_original['columnTypeId'] && $this->_modified['columnTypeId']) {
-
-                // If all these changes are performed within the same entity
-                if ($table && !array_key_exists('entityId', $this->_modified)) {
-
-                    // Remove zero-values from column, as zero-values are not allowed
-                    // for fields, that have storeRelationAbility = 'many'
-                    Indi::db()->query($sql = '
-                        UPDATE `' . $table . '` SET `' . $this->alias . '`
-                            = SUBSTR(REPLACE(CONCAT(",", `' . $this->alias . '`), ",0", ""), 2)
-                    ');
-                }
-            }
-        }
-
-        // If $deleteUploadedFiles flag is set to true - call deleteUploadedFiles()
-        if ($deleteUploadedFiles) $this->deleteUploadedFiles();
-
         // Standard save
         $return = parent::save();
 
         // If earlier we detected some values, that should be inserted to `enumset` table - insert them
-        if ($enumsetAppendA)
-            foreach ($enumsetAppendA as $title => $enumsetAppendI) if (strlen($enumsetAppendI)  )
-                Indi::db()->query('
-                    INSERT INTO `enumset` SET
-                    `fieldId` = "' . $this->id . '",
-                    `title` = "' . (Indi::rexm('int11', $title)
-                        ? sprintf(I_ENUMSET_DEFAULT_VALUE_BLANK_TITLE, $enumsetAppendI)
-                        : $title) . '",
-                    `alias` = "' . $enumsetAppendI. '",
-                    ' . (Indi::model('Enumset')->fields('javascript') ? '`javascript` = "",' : '') . '
-                    `move` = "' . Indi::db()->query('SHOW TABLE STATUS LIKE "enumset"')->fetch(PDO::FETCH_OBJ)->Auto_increment . '"
-                ');
+        $this->_enumsetAppend($enumsetAppendA);
 
-        // Check if where was no relation and index, but now relation is exist, - we add an INDEX index
-        if (preg_match('/INT|SET|ENUM|VARCHAR/', $columnTypeR->type))
-            if (!Indi::db()->query('SHOW INDEXES FROM `' . $table .'` WHERE `Column_name` = "' . $this->alias . '"')
-                ->fetch(PDO::FETCH_OBJ)->Key_name)
-                    if ($original['storeRelationAbility'] == 'none' && $this->storeRelationAbility != 'none')
-                        Indi::db()->query('ALTER TABLE  `' . $table .'` ADD INDEX (`' . $this->alias . '`)');
-
-        // Check if where was a relation, and these was an index, but now there is no relation, - we remove an INDEX index
-        if ($original['storeRelationAbility'] != 'none' && $this->storeRelationAbility == 'none')
-            if ($index = Indi::db()->query('SHOW INDEXES FROM `' . $table .'` WHERE `Column_name` = "' . $this->alias . '"')
-                ->fetch(PDO::FETCH_OBJ)->Key_name)
-                    Indi::db()->query('ALTER TABLE  `' . $table .'` DROP INDEX `' . $index . '`');
-
-        // Check if is was not a TEXT column, and it had no FULLTEXT index, but now it is a TEXT column, - we add a FULLTEXT index
-        if (Indi::model('ColumnType')->fetchRow('`id` = "' . $original['columnTypeId'] . '"')->type != 'TEXT')
-            if (!Indi::db()->query('SHOW INDEXES FROM `' . $table .'` WHERE `Column_name` = "' . $this->alias . '"
-                AND `Index_type` = "FULLTEXT"')->fetch())
-                    if ($columnTypeR->type == 'TEXT')
-                        Indi::db()->query('ALTER TABLE  `' . $table .'` ADD FULLTEXT (`' . $this->alias . '`)');
-
-        // Check if is was a TEXT column, and it had a FULLTEXT index, but now it is not a TEXT column, - we remove a FULLTEXT index
-        if (Indi::model('ColumnType')->fetchRow('`id` = "' . $original['columnTypeId'] . '"')->type == 'TEXT')
-            if ($index = Indi::db()->query('SHOW INDEXES FROM `' . $table .'` WHERE `Column_name` = "' . $this->alias . '"
-                AND `Index_type` = "FULLTEXT"')->fetch(PDO::FETCH_OBJ)->Key_name)
-                    if ($columnTypeR->type != 'TEXT')
-                        Indi::db()->query('ALTER TABLE  `' . $table .'` DROP INDEX `' . $index . '`');
-
+        // Setup MySQL indexes
+        $this->_indexes($columnTypeR, $table, $original);
 
         // Reload the model, because field info was changed
         Indi::model($this->entityId)->reload();
@@ -797,6 +517,417 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
 
         // Return
         return $return;
+    }
+
+    /**
+     * @param $columnTypeR
+     * @param $table
+     * @return array
+     */
+    private function _setupEnumset($columnTypeR, $table) {
+
+        // Get the column type row, representing field's column before type change (original column)
+        $curTypeR = coltype($this->_original['columnTypeId']);
+
+        // Get the existing enumset values
+        $enumsetA = $this->id ? $this->nested('enumset')->column('alias'): array();
+
+        // Get the array of default values
+        $defaultValueA = preg_match(Indi::rex('php'), $this->defaultValue)
+            ? array('')
+            : explode(',', $this->defaultValue);
+
+        // Get the values, that should be added to the list of possible values
+        $enumsetAppendA = array_diff($defaultValueA, $enumsetA);
+
+        // If we are converting BOOLEAN to ENUM|SET, ensure both 0 and 1 will be
+        // 1. mentioned in ALTER TABLE query
+        // 2. insterted into `enumset` table
+        if ($curTypeR->type == 'BOOLEAN') $enumsetAppendA = array(I_NO => 0, I_YES => 1);
+
+        // Else
+        else if ($curTypeR->id && !in($curTypeR->type, 'ENUM,SET') && $columnTypeR->type == 'ENUM') {
+
+            // Get values
+            $valueA = Indi::db()->query($this->entry
+                ? 'SELECT DISTINCT `cfgValue` FROM `param` WHERE `cfgField` = "' . $this->id . '"'
+                : 'SELECT DISTINCT `' . $this->_original['alias'] . '` FROM `' . $table . '`'
+            )->fetchAll(PDO::FETCH_COLUMN);
+
+            // Set default value
+            if (!$this->defaultValue) $this->defaultValue = $valueA[0];
+
+            // Build key-value pairs
+            $enumsetAppendA = array_combine($valueA, $valueA);
+        }
+
+        // Get the final list of possible values
+        $enumsetA = array_merge($enumsetA, $enumsetAppendA);
+
+        // Force `relation` property to be '6' - id of enumset `entity`
+        $this->relation = 6;
+
+        // Return
+        return [$enumsetA, $enumsetAppendA];
+    }
+
+    /**
+     * If store relation ability changed to  'many'
+     * And if field had it's own column within database table, and still has
+     * And if all these changes are performed within the same entity
+     * - Remove 0-values from column, as 0-values are not allowed
+     *   for fields, that have storeRelationAbility = 'many'
+     *
+     * @param $table
+     */
+    private function _clear0($table) {
+        if ($this->_modified['storeRelationAbility'] == 'many'
+            && $this->_original['columnTypeId'] && $this->_modified['columnTypeId']
+            && $table && !array_key_exists('entityId', $this->_modified)) Indi::db()->query('
+            UPDATE `' . $table . '` SET `' . $this->alias . '` = SUBSTR(REPLACE(CONCAT(",", `' . $this->alias . '`), ",0", ""), 2)
+        ');
+    }
+
+    /**
+     *  If field column type was ENUM or SET, but now it is not -
+     * we should delete rows, related to current field, from `enumset` table
+     *
+     * @param $columnTypeR
+     */
+    private function _clearEnumset($columnTypeR) {
+        if (!preg_match('/^ENUM|SET$/', $columnTypeR->type)
+            && preg_match('/^ENUM|SET$/', coltype($this->_original['columnTypeId'])->type))
+            $this->clearEnumset();
+    }
+
+    /**
+     * If there was a relation, but now there is no - we perform a number of 'reset' adjustments, that aim to
+     * void values of all properties, that are certainly not used now, as field does not store foreign keys no more
+     *
+     * @param $columnTypeR
+     * @throws Exception
+     */
+    private function _resetRelation($columnTypeR) {
+        if (array_key_exists('storeRelationAbility', $this->_modified) && $this->_modified['storeRelationAbility'] == 'none') {
+
+            // If control element was radio or multicheck - set it as string
+            if (preg_match('/^radio|multicheck$/', $this->foreign('elementId')->alias))
+                $this->elementId = element('string')->id;
+
+            // Else if control element was combo, and column type is not BOOLEAN - set control element as string also
+            else if ($this->foreign('elementId')->alias == 'combo' && $columnTypeR->type != 'BOOLEAN')
+                $this->elementId = element('string')->id;
+
+            // If column type was ENUM or SET - set it as VARCHAR(255)
+            if (preg_match('/^ENUM|SET$/', $columnTypeR->type)) $this->columnTypeId = coltype('VARCHAR(255)')->id;
+
+            // Setup `relation` as 0
+            $this->relation = 0;
+
+            // Setup `filter` as an empty string
+            $this->filter = '';
+        }
+    }
+
+    /**
+     * Detect and return proper default value to be used in ALTER TABLE query,
+     * Also setup proper value for $this->defaultValue
+     *
+     * @param $columnTypeR
+     * @return string
+     */
+    private function _defaultValue($columnTypeR) {
+
+        // Trim the whitespaces and replace double quotes from `defaultValue` property,
+        // for proper check of defaultValue compability to mysql column type
+        $this->defaultValue = trim(str_replace('"', '&quot;', $this->defaultValue));
+
+        // Check if default value contains php expressions
+        $php = preg_match(Indi::rex('php'), $this->defaultValue);
+
+        // Initial setup the default value for use in sql query
+        $defaultValue = $this->defaultValue;
+
+        // If column type is VARCHAR(255)
+        if ($columnTypeR->type == 'VARCHAR(255)') {
+
+            // If $php is true - set $defaultValue as empty string
+            if ($php) $defaultValue = '';
+
+            // Else if store relation ability changed to 'many' and default value contains zeros
+            else if ($this->_modified['storeRelationAbility'] == 'many' && preg_match('/,0/', ',' . $defaultValue))
+
+                // Strip zeros from both $defaultValue and $this->defaultValue
+                $this->defaultValue = $defaultValue = ltrim(preg_replace('/,0/', '', ',' . $defaultValue), ',');
+
+        // Else if column type is INT(11)
+        } else if ($columnTypeR->type == 'INT(11)') {
+
+            // If $php is true, or $defaultValue is not a positive integer
+            if ($php || !preg_match(Indi::rex('int11'), $defaultValue)) {
+
+                // If $defaultValue does not contain php expressions and
+                // is not a positive integer - we set field's `defaultValue` as '0'
+                if (!$php) $this->defaultValue = '0';
+
+                // Set $defaultValue as '0'
+                $defaultValue = '0';
+            }
+
+        // Else if column type is DOUBLE(7,2)
+        } else if ($columnTypeR->type == 'DOUBLE(7,2)') {
+
+            // If $php is true, or default value does not match the column type signature
+            if ($php || !preg_match(Indi::rex('double72'), $defaultValue)) {
+
+                // If $defaultValue does not contain php expressions and
+                // is not a positive integer - we set field's `defaultValue` as '0'
+                if (!$php) $this->defaultValue = '0';
+
+                // Set $defaultValue as '0'
+                $defaultValue = '0';
+            }
+
+        // Else if column type is DECIMAL(11,2)
+        } else if ($columnTypeR->type == 'DECIMAL(11,2)') {
+
+            // If $php is true, or default value does not match the column type signature
+            if ($php || !preg_match(Indi::rex('decimal112'), $defaultValue)) {
+
+                // If $defaultValue does not contain php expressions and
+                // is not a positive integer - we set field's `defaultValue` as '0.00'
+                if (!$php) $this->defaultValue = '0.00';
+
+                // Set $defaultValue as '0'
+                $defaultValue = '0.00';
+            }
+
+        // Else if column type is DECIMAL(14,3)
+        } else if ($columnTypeR->type == 'DECIMAL(14,3)') {
+
+            // If $php is true, or default value does not match the column type signature
+            if ($php || !preg_match(Indi::rex('decimal143'), $defaultValue)) {
+
+                // If $defaultValue does not contain php expressions and
+                // is not a positive integer - we set field's `defaultValue` as '0.000'
+                if (!$php) $this->defaultValue = '0.000';
+
+                // Set $defaultValue as '0.000'
+                $defaultValue = '0.000';
+            }
+
+        // Else if column type is DATE
+        } else if ($columnTypeR->type == 'DATE') {
+
+            // If $php is true or default value is not a date in format YYYY-MM-DD
+            if ($php || !preg_match(Indi::rex('date'), $defaultValue)) {
+
+                // If $defaultValue does not contain php expressions and
+                // is not a date - we set field's `defaultValue` as '0000-00-00'
+                if (!$php) $this->defaultValue = '0000-00-00';
+
+                // Set $defaultValue as '0000-00-00'
+                $defaultValue = '0000-00-00';
+
+                // Else if $default value is not '0000-00-00'
+            } else if ($defaultValue != '0000-00-00') {
+
+                // Extract year, month and day from date
+                list($year, $month, $day) = explode('-', $defaultValue);
+
+                // If $defaultValue is not a valid date - set it and field's `defaultValue `as '0000-00-00'
+                if (!checkdate($month, $day, $year)) $this->defaultValue = $defaultValue = '0000-00-00';
+            }
+
+        // Else if column type is YEAR
+        } else if ($columnTypeR->type == 'YEAR') {
+
+            // If $php is true or default value does not match the YEAR column type format - set it as '0000'
+            if ($php || !preg_match(Indi::rex('year'), $defaultValue)) {
+
+                // If $defaultValue does not contain php expressions and
+                // is not a year - we set field's `defaultValue` as '0000'
+                if (!$php) $this->defaultValue = '0000';
+
+                // Set $defaultValue as '0000'
+                $defaultValue = '0000';
+            }
+
+        // Else if column type is TIME
+        } else if ($columnTypeR->type == 'TIME') {
+
+            // If $php is true or default value is not a time in format HH:MM:SS - set it as '00:00:00'. Otherwise
+            if ($php || !preg_match(Indi::rex('time'), $defaultValue)) {
+
+                // If $defaultValue does not contain php expressions and
+                // is not a time - we set field's `defaultValue` as '00:00:00'
+                if (!$php) $this->defaultValue = '00:00:00';
+
+                // Set $defaultValue as '00:00:00'
+                $defaultValue = '00:00:00';
+
+            } else {
+
+                // Extract hours, minutes and seconds from $defaultValue
+                list($time['hour'], $time['minute'], $time['second']) = explode(':', $defaultValue);
+
+                // If any of hours, minutes or seconds values exceeds
+                // their possible values - set $defaultValue and field's `defaultValue` as '00:00:00'
+                if ($time['hour'] > 23 || $time['minute'] > 59 || $time['second'] > 59)
+                    $this->defaultValue = $defaultValue = '00:00:00';
+            }
+
+        // Else if column type is DATETIME
+        } else if ($columnTypeR->type == 'DATETIME') {
+
+            // If $php is true or $defaultValue is not a datetime in format YYYY-MM-DD HH:MM:SS - set it as '0000-00-00 00:00:00'
+            if ($php || !preg_match(Indi::rex('datetime'), $defaultValue)) {
+
+                // If $defaultValue does not contain php expressions and
+                // is not a datetime - we set field's `defaultValue` as '0000-00-00 00:00:00'
+                if (!$php) $this->defaultValue = '0000-00-00 00:00:00';
+
+                // Set $defaultValue as '0000-00-00 00:00:00'
+                $defaultValue = '0000-00-00 00:00:00';
+
+            // Else if $defaultValue is not '0000-00-00 00:00:00'
+            } else if ($defaultValue != '0000-00-00 00:00:00') {
+
+                // Extract date and time from $defaultValue
+                list($date, $time) = explode(' ', $defaultValue);
+
+                // Extract year, month and day from $defaultValue's date
+                list($year, $month, $day) = explode('-', $date);
+
+                // If $defaultValue's date is not a valid date - set $defaultValue as '0000-00-00 00:00:00'. Else
+                if (!checkdate($month, $day, $year)) $this->defaultValue = $defaultValue = '0000-00-00 00:00:00'; else {
+
+                    // Extract hour, minute and second from $defaultValue's time
+                    list($hour, $minute, $second) = explode(':', $time);
+
+                    // If any of hour, minute or second values exceeds their
+                    // possible - set $defaultValue and field's `defaultValue` as '0000-00-00 00:00:00'
+                    if ($hour > 23 || $minute > 59 || $second > 59)
+                        $this->defaultValue = $defaultValue = '0000-00-00 00:00:00';
+                }
+            }
+
+        // Else if column type is ENUM
+        } else if ($columnTypeR->type == 'ENUM') {
+
+            // If $php is true, set $defaultValue as empty string
+            if ($php) $defaultValue = '';
+
+        // Else if column type is SET
+        } else if ($columnTypeR->type == 'SET') {
+
+            // If $php is true, set $defaultValue as empty string
+            if ($php) $defaultValue = '';
+
+        // Else if column type is BOOLEAN
+        } else if ($columnTypeR->type == 'BOOLEAN') {
+
+            // If $php is true or $devaultValue is not 0 or 1 - set it as 0
+            if ($php || !preg_match(Indi::rex('bool'), $defaultValue)) {
+
+                // If $defaultValue does not contain php expressions and
+                // is not a boolean - we set field's `defaultValue` as '0'
+                if (!$php) $this->defaultValue = '0';
+
+                // Set $defaultValue as '0'
+                $defaultValue = '0';
+            }
+
+        // Else if column type is VARCHAR(10) we assume that it should be a color in format 'hue#rrggbb'
+        } else if ($columnTypeR->type == 'VARCHAR(10)') {
+
+            // If $php is true, or $defaultValue is not a color in format either '#rrggbb' or 'hue#rrggbb'
+            if ($php || (!preg_match(Indi::rex('rgb'), $defaultValue) && !preg_match(Indi::rex('hrgb'), $defaultValue))) {
+
+                // If $defaultValue does not contain php expressions and
+                // is not a color in format either '#rrggbb' or 'hue#rrggbb'
+                // - set field's `defaultValue` as empty string
+                if (!$php) $this->defaultValue = '';
+
+                // Set $defaultValue as empty string
+                $defaultValue = '';
+
+            // Else if $defaultValue is a color in format '#rrggbb'
+            } else if (preg_match(Indi::rex('rgb'), $defaultValue))
+
+                // We prepend it with hue number
+                $defaultValue = hrgb($defaultValue);
+        }
+
+        // Return $defaultValue
+        return $defaultValue;
+    }
+
+    /**
+     * If we detected some values, that should be inserted to `enumset` table - insert them
+     *
+     * @param $enumsetAppendA
+     */
+    private function _enumsetAppend($enumsetAppendA) {
+
+        // Foreach title=>alias pair to be appended
+        foreach ($enumsetAppendA ?: [] as $title => $alias) {
+
+            // If empty alias - skip
+            if (!strlen($alias)) continue;
+
+            // If $title is an integer - setup more user readable title by default
+            if (Indi::rexm('int11', $title)) $title = sprintf(I_ENUMSET_DEFAULT_VALUE_BLANK_TITLE, $alias);
+
+            // Get `move` as auto increment
+            $move = Indi::db()->query('SHOW TABLE STATUS LIKE "enumset"')->fetch(PDO::FETCH_OBJ)->Auto_increment;
+
+            // Do insert todo: refactor
+            Indi::db()->query('
+                INSERT INTO `enumset` SET
+                `fieldId` = "' . $this->id . '",
+                `title` = "' . $title . '",
+                `alias` = "' . $alias . '",
+                `move` = "' . $move . '"
+            ');
+        }
+    }
+
+    /**
+     * Create/delete indexes
+     *
+     * @param $columnTypeR
+     * @param $table
+     * @param $original
+     */
+    private function _indexes($columnTypeR, $table, $original) {
+
+        // Check if where was no relation and index, but now relation is exist, - we add an INDEX index
+        if (preg_match('/INT|SET|ENUM|VARCHAR/', $columnTypeR->type))
+            if (!Indi::db()->query('SHOW INDEXES FROM `' . $table .'` WHERE `Column_name` = "' . $this->alias . '"')
+                ->fetch(PDO::FETCH_OBJ)->Key_name)
+                if ($original['storeRelationAbility'] == 'none' && $this->storeRelationAbility != 'none')
+                    Indi::db()->query('ALTER TABLE  `' . $table .'` ADD INDEX (`' . $this->alias . '`)');
+
+        // Check if where was a relation, and these was an index, but now there is no relation, - we remove an INDEX index
+        if ($original['storeRelationAbility'] != 'none' && $this->storeRelationAbility == 'none')
+            if ($index = Indi::db()->query('SHOW INDEXES FROM `' . $table .'` WHERE `Column_name` = "' . $this->alias . '"')
+                ->fetch(PDO::FETCH_OBJ)->Key_name)
+                Indi::db()->query('ALTER TABLE  `' . $table .'` DROP INDEX `' . $index . '`');
+
+        // Check if is was not a TEXT column, and it had no FULLTEXT index, but now it is a TEXT column, - we add a FULLTEXT index
+        if (Indi::model('ColumnType')->fetchRow('`id` = "' . $original['columnTypeId'] . '"')->type != 'TEXT')
+            if (!Indi::db()->query('SHOW INDEXES FROM `' . $table .'` WHERE `Column_name` = "' . $this->alias . '"
+                AND `Index_type` = "FULLTEXT"')->fetch())
+                if ($columnTypeR->type == 'TEXT')
+                    Indi::db()->query('ALTER TABLE  `' . $table .'` ADD FULLTEXT (`' . $this->alias . '`)');
+
+        // Check if is was a TEXT column, and it had a FULLTEXT index, but now it is not a TEXT column, - we remove a FULLTEXT index
+        if (Indi::model('ColumnType')->fetchRow('`id` = "' . $original['columnTypeId'] . '"')->type == 'TEXT')
+            if ($index = Indi::db()->query('SHOW INDEXES FROM `' . $table .'` WHERE `Column_name` = "' . $this->alias . '"
+                AND `Index_type` = "FULLTEXT"')->fetch(PDO::FETCH_OBJ)->Key_name)
+                if ($columnTypeR->type != 'TEXT')
+                    Indi::db()->query('ALTER TABLE  `' . $table .'` DROP INDEX `' . $index . '`');
     }
 
     /**

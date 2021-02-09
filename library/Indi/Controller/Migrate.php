@@ -1,5 +1,456 @@
 <?php
 class Indi_Controller_Migrate extends Indi_Controller {
+    public function cfgFieldMetaAction() {
+        field('param', 'cfgField', [
+            'title' => 'Параметр',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'defaultValue' => '0',
+            'move' => 'title',
+            'relation' => 'field',
+            'storeRelationAbility' => 'one',
+            'filter' => '`entityId` = "4"',
+        ]);
+        consider('param', 'cfgField', 'fieldId', ['foreign' => 'elementId', 'required' => 'y', 'connector' => 'entry']);
+        field('param', 'cfgValue', [
+            'title' => 'Значение',
+            'columnTypeId' => 'TEXT',
+            'elementId' => 'textarea',
+            'move' => 'cfgField',
+        ]);
+        field('field', 'entry', [
+            'title' => 'Экземпляр',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'defaultValue' => '0',
+            'move' => 'entityId',
+            'storeRelationAbility' => 'one',
+        ]);
+        consider('field', 'entry', 'entityId', ['required' => 'y']);
+        field('field', 'title', ['move' => 'entry']);
+        field('element', 'optionTemplate', [
+            'title' => 'Шаблон содержимого опции',
+            'columnTypeId' => 'TEXT',
+            'elementId' => 'textarea',
+            'move' => 'hidden',
+            'entry' => '23',
+        ]);
+        field('element', 'optionHeight', [
+            'title' => 'Высота опции',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'number',
+            'defaultValue' => '14',
+            'move' => 'optionTemplate',
+            'entry' => '23',
+        ]);
+        field('element', 'placeholder', [
+            'title' => 'Плейсхолдер',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'string',
+            'move' => 'optionHeight',
+            'entry' => '23',
+        ]);
+        field('element', 'groupBy', [
+            'title' => 'Группировка опций по столбцу',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'defaultValue' => '0',
+            'move' => 'placeholder',
+            'relation' => 'field',
+            'storeRelationAbility' => 'one',
+            'entry' => '23',
+        ]);
+        field('element', 'optionAttrs', [
+            'title' => 'Дополнительно передавать параметры (в виде атрибутов)',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'combo',
+            'move' => 'groupBy',
+            'relation' => 'field',
+            'storeRelationAbility' => 'many',
+            'entry' => '23',
+        ]);
+        field('element', 'noLookup', [
+            'title' => 'Отключить лукап',
+            'columnTypeId' => 'BOOLEAN',
+            'elementId' => 'check',
+            'defaultValue' => '0',
+            'move' => 'optionAttrs',
+            'entry' => '23',
+        ]);
+        field('element', 'titleColumn', [
+            'title' => 'Заголовочное поле',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'defaultValue' => '0',
+            'move' => 'cols',
+            'relation' => 'field',
+            'storeRelationAbility' => 'one',
+            'entry' => '23',
+        ]);
+        field('element', 'wide', [
+            'title' => 'Во всю ширину',
+            'columnTypeId' => 'BOOLEAN',
+            'elementId' => 'check',
+            'defaultValue' => '0',
+            'move' => 'when',
+            'entry' => '23',
+        ]);
+        field('element', 'maxlength', [
+            'title' => 'Максимальная длина в символах',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'number',
+            'defaultValue' => '0',
+            'move' => 'prependEntityTitle',
+            'entry' => '1',
+        ]);
+        field('element', 'inputMask', [
+            'title' => 'Маска',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'string',
+            'move' => 'maxlength',
+            'entry' => '1',
+        ]);
+        field('element', 'shade', [
+            'title' => 'Шейдинг',
+            'columnTypeId' => 'BOOLEAN',
+            'elementId' => 'check',
+            'defaultValue' => '0',
+            'move' => 'inputMask',
+            'entry' => '1',
+        ]);
+        field('element', 'refreshL10nsOnUpdate', [
+            'title' => 'Обновлять локализации для других языков',
+            'columnTypeId' => 'BOOLEAN',
+            'elementId' => 'check',
+            'defaultValue' => '0',
+            'move' => 'allowedTags',
+            'entry' => '1',
+        ]);
+        field('element', 'titleColumn', [
+            'title' => 'Заголовочное поле',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'move' => 'cols',
+            'relation' => 'field',
+            'storeRelationAbility' => 'one',
+            'entry' => '5',
+        ]);
+        field('element', 'allowedTags', [
+            'title' => 'Разрешенные теги',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'string',
+            'move' => 'titleColumn',
+            'entry' => '6',
+        ]);
+        field('element', 'refreshL10nsOnUpdate', [
+            'title' => 'Обновлять локализации для других языков',
+            'columnTypeId' => 'BOOLEAN',
+            'elementId' => 'check',
+            'defaultValue' => '0',
+            'move' => 'allowedTags',
+            'entry' => '6',
+        ]);
+        field('element', 'cols', [
+            'title' => 'Количество столбцов',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'number',
+            'defaultValue' => '1',
+            'move' => 'refreshL10nsOnUpdate',
+            'entry' => '7',
+        ]);
+        field('element', 'titleColumn', [
+            'title' => 'Заголовочное поле',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'defaultValue' => '0',
+            'move' => 'cols',
+            'relation' => 'field',
+            'storeRelationAbility' => 'one',
+            'entry' => '7',
+        ]);
+        field('element', 'displayFormat', [
+            'title' => 'Отображаемый формат',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'string',
+            'defaultValue' => 'Y-m-d',
+            'move' => 'titleColumn',
+            'entry' => '12',
+        ]);
+        field('element', 'when', [
+            'title' => 'Когда',
+            'columnTypeId' => 'SET',
+            'elementId' => 'combo',
+            'move' => 'allowTypes',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+            'entry' => '12',
+        ]);
+        enumset('element', 'when', 'month', ['title' => 'Месяц', 'move' => '']);
+        enumset('element', 'when', 'week', ['title' => 'День недели', 'move' => 'month']);
+        field('element', 'wide', [
+            'title' => 'Во всю ширину',
+            'columnTypeId' => 'BOOLEAN',
+            'elementId' => 'check',
+            'defaultValue' => '0',
+            'move' => 'when',
+            'entry' => '13',
+        ]);
+        field('element', 'height', [
+            'title' => 'Высота в пикселях',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'number',
+            'defaultValue' => '200',
+            'move' => 'wide',
+            'entry' => '13',
+        ]);
+        field('element', 'width', [
+            'title' => 'Ширина в пикселях',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'number',
+            'defaultValue' => '0',
+            'move' => 'height',
+            'entry' => '13',
+        ]);
+        field('element', 'bodyClass', [
+            'title' => 'Css класс для body',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'string',
+            'move' => 'width',
+            'entry' => '13',
+        ]);
+        field('element', 'contentsCss', [
+            'title' => 'Путь к css-нику для подцепки редактором',
+            'columnTypeId' => 'TEXT',
+            'elementId' => 'textarea',
+            'move' => 'bodyClass',
+            'entry' => '13',
+        ]);
+        field('element', 'style', [
+            'title' => 'Стили',
+            'columnTypeId' => 'TEXT',
+            'elementId' => 'textarea',
+            'move' => 'contentsCss',
+            'entry' => '13',
+        ]);
+        field('element', 'contentsJs', [
+            'title' => 'Путь к js-нику для подцепки редактором',
+            'columnTypeId' => 'TEXT',
+            'elementId' => 'textarea',
+            'move' => 'style',
+            'entry' => '13',
+        ]);
+        field('element', 'script', [
+            'title' => 'Скрипт',
+            'columnTypeId' => 'TEXT',
+            'elementId' => 'textarea',
+            'move' => 'contentsJs',
+            'entry' => '13',
+        ]);
+        field('element', 'sourceStripper', [
+            'title' => 'Скрипт обработки исходного кода',
+            'columnTypeId' => 'TEXT',
+            'elementId' => 'textarea',
+            'move' => 'script',
+            'entry' => '13',
+        ]);
+        field('element', 'appendFieldTitle', [
+            'title' => 'Включать наименование поля в имя файла при загрузке',
+            'columnTypeId' => 'BOOLEAN',
+            'elementId' => 'check',
+            'defaultValue' => '1',
+            'move' => 'sourceStripper',
+            'entry' => '14',
+        ]);
+        field('element', 'prependEntityTitle', [
+            'title' => 'Включать наименование сущности в имя файла при download-е',
+            'columnTypeId' => 'BOOLEAN',
+            'elementId' => 'check',
+            'defaultValue' => '1',
+            'move' => 'appendFieldTitle',
+            'entry' => '14',
+        ]);
+        field('element', 'maxlength', [
+            'title' => 'Максимальная длина в символах',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'number',
+            'defaultValue' => '5',
+            'move' => 'prependEntityTitle',
+            'entry' => '18',
+        ]);
+        field('element', 'measure', [
+            'title' => 'Единица измерения',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'string',
+            'move' => 'maxlength',
+            'entry' => '18',
+        ]);
+        field('element', 'displayTimeFormat', [
+            'title' => 'Отображаемый формат времени',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'string',
+            'defaultValue' => 'H:i',
+            'move' => 'measure',
+            'entry' => '19',
+        ]);
+        field('element', 'displayDateFormat', [
+            'title' => 'Отображаемый формат даты',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'string',
+            'defaultValue' => 'Y-m-d',
+            'move' => 'displayTimeFormat',
+            'entry' => '19',
+        ]);
+        field('element', 'vtype', [
+            'title' => 'Валидация',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'none',
+            'move' => 'displayDateFormat',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+            'entry' => '1',
+        ]);
+        enumset('element', 'vtype', 'none', ['title' => 'Нет', 'move' => '']);
+        enumset('element', 'vtype', 'email', ['title' => 'Email', 'move' => 'none']);
+        enumset('element', 'vtype', 'url', ['title' => 'URL', 'move' => 'email']);
+        field('element', 'allowTypes', [
+            'title' => 'Допустимые типы',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'string',
+            'move' => 'vtype',
+            'tooltip' => 'Укажите список расширений и/или группы расширений, через запятую: 
+- image: gif,png,jpeg,jpg
+- office: doc,pdf,docx,xls,xlsx,txt,odt,ppt,pptx
+- draw: psd,ai,cdr
+- archive: zip,rar,7z,gz,tar',
+            'entry' => '14',
+        ]);
+        field('element', 'when', [
+            'title' => 'Когда',
+            'columnTypeId' => 'SET',
+            'elementId' => 'combo',
+            'move' => 'allowTypes',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'many',
+            'entry' => '19',
+        ]);
+        enumset('element', 'when', 'month', ['title' => 'Месяц', 'move' => '']);
+        enumset('element', 'when', 'week', ['title' => 'День недели', 'move' => 'month']);
+        alteredField('fields', 'entry', ['mode' => 'hidden']);
+        section('params', ['extendsPhp' => 'Indi_Controller_Admin_CfgValue']);
+        section('fields', ['filter' => '`entry` = "0"']);
+        grid('params', 'possibleParamId', ['toggle' => 'h']);
+        grid('params', 'value', ['toggle' => 'h']);
+        grid('params', 'cfgField', true);
+        grid('params', 'cfgValue', ['editor' => 1]);
+        section('controlElements', ['toggle' => 'y']);
+        section('elementCfgField', [
+            'sectionId' => 'controlElements',
+            'entityId' => 'field',
+            'title' => 'Возможные настройки',
+            'rowsOnPage' => '100',
+            'extendsPhp' => 'Indi_Controller_Admin_CfgField',
+            'defaultSortField' => 'move',
+            'type' => 's',
+            'parentSectionConnector' => 'entry',
+            'rowsetSeparate' => 'no',
+            'roleIds' => '1',
+            'extendsJs' => 'Indi.lib.controller.Field',
+            'multiSelect' => '1',
+        ]);
+        section2action('elementCfgField','index', ['profileIds' => '1']);
+        section2action('elementCfgField','form', ['profileIds' => '1']);
+        section2action('elementCfgField','save', ['profileIds' => '1']);
+        section2action('elementCfgField','delete', ['profileIds' => '1']);
+        section2action('elementCfgField','up', ['profileIds' => '1']);
+        section2action('elementCfgField','down', ['profileIds' => '1']);
+        section2action('elementCfgField','activate', ['profileIds' => '1', 'rename' => 'Выбрать режим']);
+        section2action('elementCfgField','export', ['profileIds' => '1']);
+        grid('elementCfgField', 'title', ['editor' => 1]);
+        grid('elementCfgField', 'alias', ['alterTitle' => 'Псевдоним', 'editor' => 1]);
+        grid('elementCfgField', 'fk', true);
+        grid('elementCfgField', 'storeRelationAbility', ['gridId' => 'fk']);
+        grid('elementCfgField', 'relation', ['alterTitle' => 'Сущность', 'gridId' => 'fk', 'editor' => 1]);
+        grid('elementCfgField', 'filter', ['alterTitle' => 'Фильтрация', 'gridId' => 'fk', 'editor' => 1]);
+        grid('elementCfgField', 'el', ['alterTitle' => 'Элемент управления']);
+        grid('elementCfgField', 'mode', ['gridId' => 'el']);
+        grid('elementCfgField', 'elementId', ['alterTitle' => 'Элемент', 'gridId' => 'el', 'editor' => 1]);
+        grid('elementCfgField', 'tooltip', ['gridId' => 'el', 'editor' => 1]);
+        grid('elementCfgField', 'mysql', true);
+        grid('elementCfgField', 'columnTypeId', ['alterTitle' => 'Тип столбца', 'gridId' => 'mysql', 'editor' => 1]);
+        grid('elementCfgField', 'defaultValue', ['alterTitle' => 'По умолчанию', 'gridId' => 'mysql', 'editor' => 1]);
+        grid('elementCfgField', 'l10n', ['alterTitle' => 'l10n', 'gridId' => 'mysql']);
+        grid('elementCfgField', 'move', true);
+        alteredField('elementCfgField', 'entityId', ['defaultValue' => '4']);
+        section('elementCfgFieldEnumset', [
+            'sectionId' => 'elementCfgField',
+            'entityId' => 'enumset',
+            'title' => 'Возможные значения',
+            'extendsPhp' => 'Indi_Controller_Admin_Exportable',
+            'defaultSortField' => 'move',
+            'type' => 's',
+            'rowsetSeparate' => 'no',
+            'roleIds' => '1',
+        ]);
+        section2action('elementCfgFieldEnumset','index', ['profileIds' => '1']);
+        section2action('elementCfgFieldEnumset','form', ['profileIds' => '1']);
+        section2action('elementCfgFieldEnumset','save', ['profileIds' => '1']);
+        section2action('elementCfgFieldEnumset','delete', ['profileIds' => '1']);
+        section2action('elementCfgFieldEnumset','up', ['profileIds' => '1']);
+        section2action('elementCfgFieldEnumset','down', ['profileIds' => '1']);
+        section2action('elementCfgFieldEnumset','export', ['profileIds' => '1']);
+        grid('elementCfgFieldEnumset', 'title', ['editor' => 1]);
+        grid('elementCfgFieldEnumset', 'alias', ['editor' => 1]);
+        grid('elementCfgFieldEnumset', 'move', true);
+        section('paramsAll', [
+            'sectionId' => 'configuration',
+            'entityId' => 'param',
+            'title' => 'Все параметры',
+            'extendsPhp' => 'Indi_Controller_Admin_CfgValue',
+            'type' => 's',
+            'roleIds' => '1',
+        ]);
+        section2action('paramsAll','index', ['profileIds' => '1']);
+        section2action('paramsAll','form', ['profileIds' => '1']);
+        section2action('paramsAll','save', ['profileIds' => '1']);
+        section2action('paramsAll','delete', ['profileIds' => '1']);
+        grid('paramsAll', 'fieldId', true);
+        grid('paramsAll', 'possibleParamId', true);
+        grid('paramsAll', 'value', true);
+        grid('paramsAll', 'title', true);
+        grid('paramsAll', 'cfgField', true);
+        grid('paramsAll', 'cfgValue', true);
+        filter('paramsAll', 'fieldId', 'entityId', true);
+    }
+    public function cfgFieldImportAction() {
+
+        foreach (m('param')->fetchAll() as $paramR) {
+            $possibleR = $paramR->foreign('possibleParamId');
+            if ($cfgField = m('Field')->fetchRow([
+                '`entityId` = "' . entity('element')->id . '"',
+                '`entry` = "' . $possibleR->elementId . '"',
+                '`alias` = "' . $possibleR->alias . '"'
+            ])) {
+                $paramR->cfgField = $cfgField->id;
+                $paramR->basicUpdate();
+            }
+        }
+
+        foreach (m('param')->fetchAll() as $paramR) {
+            $param = $paramR->foreign('possibleParamId')->alias;
+            $rel = $paramR->foreign('fieldId')->rel();
+            if (in($param, 'groupBy,titleColumn')) $paramR->cfgValue = $rel->fields($paramR->value)->id;
+            else if ($param == 'optionAttrs')
+                $paramR->cfgValue = $rel->fields()->select($paramR->value, 'alias')->column('id', true);
+            else if ($param == 'vtype') $paramR->cfgValue = $paramR->value == '' ? 'none' : $paramR->value;
+            else if ($param == 'when') $paramR->cfgValue = $paramR->value;
+            else if (in($param, 'wide,noLookup,appendFieldTitle,prependEntityTitle,refreshL10nsOnUpdate,shade'))
+                $paramR->cfgValue = in($paramR->value, 'true,1') ? 1 : 0;
+            else $paramR->cfgValue = $paramR->value;
+            $paramR->save();
+        }
+        die('ok');
+    }
     public function rowReqIfAffectedAction() {
         field('grid', 'rowReqIfAffected', [
           'title' => 'При изменении ячейки обновлять всю строку',

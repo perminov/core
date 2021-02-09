@@ -60,6 +60,36 @@ class Indi_Db {
     protected static $_preloadedA = array();
 
     /**
+     * Arrays of config values. Default - are `field`.`alias` => `field`.`defaultFalue` pairs,
+     * grouped by entity's table name and entity entry id, e.g.
+     *     'default' => [
+     *         'element' => [
+     *             23 => [                            // 23 is the ID of `element` entry having `alias` = 'combo'
+     *                 'optionHeight' => 14,              // e.g 14px by default
+     *                 'groupBy' => '',                   // No options grouping by default
+     *                 ...
+     *             ]
+     *         ]
+     *     ]
+     * Certain - are `param`.`cfgField`->`field`.`alias` => `param`.`cfgValue` pairs
+     *     'certain' => [
+     *         'field' => [
+     *             19 => [                           // 19 is the ID of `field` entry having `alias` = 'entityId' and `elementId` = "23"
+     *                 'groupBy' => 'fraction'           // entity titles will be grouped by `entity`.`fraction`
+     *             ]
+     *         ]
+     *     ]
+     *
+     * So, default values are values specified by config fields definitions,
+     * and certain values are values that are explicitly defined, so they have the priority
+     * @var array
+     */
+    public static $_cfgValue = [
+        'default' => [],
+        'certain' => []
+    ];
+
+    /**
      * Store queries count
      *
      * @var Indi_Db
@@ -160,10 +190,23 @@ class Indi_Db {
             // Get temporary table names array
             foreach($entityA as $entityI) $_[$entityI['id']] = $entityI['table'];
 
-            // Collect localized fields
-            foreach ($fieldA as $fieldI)
+            // Make fields ids to be used as the keys
+            $fieldA = array_combine(array_column($fieldA, 'id'), $fieldA);
+
+            // Walk through fields, and
+            foreach ($fieldA as $fieldI) {
+
+                // Collect config-fields alias=>defaultValue pairs, grouped by entity and entry
+                if ($fieldI['entry'])
+                    self::$_cfgValue['default']
+                        [$_[$fieldI['entityId']]]
+                            [$fieldI['entry']]
+                                [$fieldI['alias']] = $fieldI['defaultValue'];
+
+                // Collect localized fields
                 if ($fieldI['storeRelationAbility'] == 'none' && in($fieldI['l10n'], 'y,qn'))
                     self::$_l10nA[$_[$fieldI['entityId']]][] = $fieldI['alias'];
+            }
 
             // Unset tmp variable
             unset($_);
@@ -267,11 +310,18 @@ class Indi_Db {
             }
             unset($possibleElementParamA);
 
-            // 4. Get info about existing field parameters
+            // 4. Get info about explicit set (e.g. non-default) config-fields' values
             $paramA = self::$_instance->query('SELECT * FROM `param`' . (is_array($fieldIdA)
                 ? ' WHERE FIND_IN_SET(`fieldId`, "' . implode(',', $fieldIdA) . '") ' : ''))->fetchAll();
-            $fParamA = array(); foreach (l10n($paramA, 'value') as $paramI) $fParamA[$paramI['fieldId']]
-            [$possibleElementParamAliasA[$paramI['possibleParamId']]] = $paramI['value']; unset($paramA);
+            $fParamA = array(); foreach (l10n($paramA, 'value') as $paramI) {
+                $fParamA[$paramI['fieldId']][$possibleElementParamAliasA[$paramI['possibleParamId']]] = $paramI['value'];
+                if (array_key_exists('cfgField', $paramI)) {
+                    if ($fieldA[$paramI['cfgField']]['relation'] == 5)  $paramI['cfgValue'] = $paramI['cfgValue']
+                        ? im(array_column(array_intersect_key($fieldA, array_flip(explode(',', $paramI['cfgValue']))), 'alias'))
+                        : '';
+                    self::$_cfgValue['certain']['field'][$paramI['fieldId']][$fieldA[$paramI['cfgField']]['alias']] = $paramI['cfgValue'];
+                }
+            }
             unset($paramA);
 
             // Group fields by their entity ids, and append system info
@@ -310,22 +360,34 @@ class Indi_Db {
                     unset($fConsiderA[$fieldI['id']]);
                 }
 
+                // Shortcuts
+                $elementId = $fieldI['original']['elementId']; $fieldId = $fieldI['original']['id'];
+
                 // Setup params, as array, containing default values, and actual values arrays merged to single array
-                if ($ePossibleElementParamA[$fieldI['original']['elementId']] || $fParamA[$fieldI['original']['id']]) {
+                if ($ePossibleElementParamA[$elementId]
+                    || $fParamA[$fieldId]
+                    || self::$_cfgValue['default']['element'][$elementId]
+                    || self::$_cfgValue['certain']['field'][$fieldId]) {
+
                     $fieldI['temporary']['params'] = array_merge(
-                        is_array($ePossibleElementParamA[$fieldI['original']['elementId']])
-                            ? $ePossibleElementParamA[$fieldI['original']['elementId']]
-                            : array(),
-                        is_array($fParamA[$fieldI['original']['id']])
-                            ? $fParamA[$fieldI['original']['id']]
-                            : array()
+                        $ePossibleElementParamA[$elementId] ?: [],
+                        $fParamA[$fieldId] ?: []
+                    );
+
+                    // For now, config-fields is a new untested update, so it will should be turnable on/off
+                    if (Indi::ini('db')->cfgField)
+                    $fieldI['temporary']['params'] = array_merge(
+                        self::$_cfgValue['default']['element'][$elementId] ?: [],
+                        self::$_cfgValue['certain']['field'][$fieldId] ?: []
                     );
                 }
 
                 // Append current field data to $eFieldA array
-                $eFieldA[$fieldI['original']['entityId']]['rows'][] = new Field_Row($fieldI);
-                $eFieldA[$fieldI['original']['entityId']]['aliases'][$fieldI['original']['id']] = $fieldI['original']['alias'];
-                $eFieldA[$fieldI['original']['entityId']]['ids'][$fieldI['original']['id']] = $fieldI['original']['id'];
+                if (!$fieldI['original']['entry']) {
+                    $eFieldA[$fieldI['original']['entityId']]['rows'][] = new Field_Row($fieldI);
+                    $eFieldA[$fieldI['original']['entityId']]['aliases'][$fieldI['original']['id']] = $fieldI['original']['alias'];
+                    $eFieldA[$fieldI['original']['entityId']]['ids'][$fieldI['original']['id']] = $fieldI['original']['id'];
+                }
             }
 
             // Release memory

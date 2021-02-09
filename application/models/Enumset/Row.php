@@ -73,8 +73,10 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
         $table = $fieldR->foreign('entityId')->table;
 
         // Get the current default value
-        $defaultValue = Indi::db()->query('SHOW COLUMNS FROM `' . $table . '` LIKE "' . $fieldR->alias . '"')
-            ->fetch(PDO::FETCH_OBJ)->Default;
+        $defaultValue = $fieldR->entry
+            ? $fieldR->defaultValue
+            : Indi::db()->query('SHOW COLUMNS FROM `' . $table . '` LIKE "' . $fieldR->alias . '"')
+                ->fetch(PDO::FETCH_OBJ)->Default;
 
         // If this is an existing enumset row
         if ($this->id) {
@@ -109,31 +111,54 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
             $enumsetA[] = $this->alias;
         }
 
-        // Build the ALTER query template
-        $tpl = 'ALTER TABLE `%s` MODIFY COLUMN `%s` %s %s CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT "%s"';
+        // If it's not a cfgField - re-run ALTER query
+        if (!$fieldR->entry) {
 
-        // Run that query
-        Indi::db()->query(sprintf($tpl, $table, $fieldR->alias, $fieldR->foreign('columnTypeId')->type,
-            '("' . im($enumsetA, '","') . '")', $defaultValue));
+            // Build the ALTER query template
+            $tpl = 'ALTER TABLE `%s` MODIFY COLUMN `%s` %s %s CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT "%s"';
+
+            // Run that query
+            Indi::db()->query(sprintf($tpl, $table, $fieldR->alias, $fieldR->foreign('columnTypeId')->type,
+                '("' . im($enumsetA, '","') . '")', $defaultValue));
+        }
 
         // Deal with existing values
         if ($this->id) {
 
-            // Replace mentions of original value with modified value
-            Indi::db()->query('
-                UPDATE `' . $table . '`
-                SET `' . $fieldR->alias . '` = TRIM(BOTH "," FROM REPLACE(
-                    CONCAT(",", `' . $fieldR->alias . '`, ","),
-                    ",' . $this->_original['alias'] . ',",
-                    ",' . $this->_modified['alias'] . ',"
-                ))
-            ');
+            // If it's not a cfgField
+            if (!$fieldR->entry) {
+
+                // Replace mentions of original value with modified value
+                Indi::db()->query('
+                    UPDATE `' . $table . '`
+                    SET `' . $fieldR->alias . '` = TRIM(BOTH "," FROM REPLACE(
+                        CONCAT(",", `' . $fieldR->alias . '`, ","),
+                        ",' . $this->_original['alias'] . ',",
+                        ",' . $this->_modified['alias'] . ',"
+                    ))
+                ');
+
+            // Else
+            } else {
+
+                // Replace mentions of original value with modified value
+                Indi::db()->query('
+                    UPDATE `param`
+                    SET `cfgValue` = TRIM(BOTH "," FROM REPLACE(
+                        CONCAT(",", `cfgValue`, ","),
+                        ",' . $this->_original['alias'] . ',",
+                        ",' . $this->_modified['alias'] . ',"
+                    ))
+                    WHERE `cfgField` = "' . $fieldR->id . '"
+                ');
+            }
 
             // Remove original value that was temporarily added to $enumsetA
             array_pop($enumsetA);
 
-            // Re-run ALTER query
-            Indi::db()->query(sprintf($tpl, $table, $fieldR->alias, $fieldR->foreign('columnTypeId')->type,
+            // If it's not a cfgField - re-run ALTER query
+            if (!$fieldR->entry)
+                Indi::db()->query(sprintf($tpl, $table, $fieldR->alias, $fieldR->foreign('columnTypeId')->type,
                 '("' . im($enumsetA, '","') . '")', $defaultValue));
         }
 
@@ -167,8 +192,10 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
         $table = $fieldR->foreign('entityId')->table;
 
         // Get the current default value
-        $defaultValue = Indi::db()->query('SHOW COLUMNS FROM `' . $table . '` LIKE "' . $fieldR->alias . '"')
-            ->fetch(PDO::FETCH_OBJ)->Default;
+        $defaultValue = $fieldR->entry
+            ? $fieldR->defaultValue
+            : Indi::db()->query('SHOW COLUMNS FROM `' . $table . '` LIKE "' . $fieldR->alias . '"')
+                ->fetch(PDO::FETCH_OBJ)->Default;
 
         // If current row is the last enumset row, related to current field - throw an error message
         if (count($enumsetA) == 1) iexit(sprintf(I_ENUMSET_ERROR_VALUE_LAST, $this->alias));
@@ -197,14 +224,18 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
         // Convert $defaultValue back from array to string
         $defaultValue = implode(',', $defaultValue);
 
-        // Build the ALTER query
-        $sql[] = 'ALTER TABLE `' . $table . '` CHANGE COLUMN `' . $fieldR->alias . '` `' . $fieldR->alias . '`';
-        $sql[] = $fieldR->foreign('columnTypeId')->type . '("' . implode('","', $enumsetA) . '")';
-        $sql[] = 'CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL';
-        $sql[] = 'DEFAULT "' . $defaultValue . '"';
+        // If it's not a cfgField
+        if (!$fieldR->entry) {
 
-        // Run that query
-        Indi::db()->query(implode(' ', $sql));
+            // Build the ALTER query
+            $sql[] = 'ALTER TABLE `' . $table . '` CHANGE COLUMN `' . $fieldR->alias . '` `' . $fieldR->alias . '`';
+            $sql[] = $fieldR->foreign('columnTypeId')->type . '("' . implode('","', $enumsetA) . '")';
+            $sql[] = 'CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL';
+            $sql[] = 'DEFAULT "' . $defaultValue . '"';
+
+            // Run that query
+            Indi::db()->query(implode(' ', $sql));
+        }
 
         // If $updateFieldDefaultValue flag is set to true
         if ($updateFieldDefaultValue)
