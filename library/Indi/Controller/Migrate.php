@@ -11,7 +11,6 @@ class Indi_Controller_Migrate extends Indi_Controller {
             'storeRelationAbility' => 'one',
             'filter' => '`entityId` = "4"',
         ]);
-        consider('param', 'cfgField', 'fieldId', ['foreign' => 'elementId', 'required' => 'y', 'connector' => 'entry']);
         field('param', 'cfgValue', [
             'title' => 'Значение',
             'columnTypeId' => 'TEXT',
@@ -26,6 +25,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
             'move' => 'entityId',
             'storeRelationAbility' => 'one',
         ]);
+        consider('param', 'cfgField', 'fieldId', ['foreign' => 'elementId', 'required' => 'y', 'connector' => 'entry']);
         consider('field', 'entry', 'entityId', ['required' => 'y']);
         field('field', 'title', ['move' => 'entry']);
         field('element', 'optionTemplate', [
@@ -421,6 +421,8 @@ class Indi_Controller_Migrate extends Indi_Controller {
         grid('paramsAll', 'cfgField', true);
         grid('paramsAll', 'cfgValue', true);
         filter('paramsAll', 'fieldId', 'entityId', true);
+        grid('paramsAll', 'fieldId', 'entityId', ['move' => '']);
+        die('ok');
     }
     public function cfgFieldImportAction() {
 
