@@ -1,5 +1,12 @@
 <?php
 class Indi_Controller_Migrate extends Indi_Controller {
+    public function cfgFieldRemoveLegacyAction() {
+        entity('possibleElementParam')->delete();
+        field('param', 'value')->delete();
+        entity('param', ['titleFieldId' => 'cfgField']);
+        consider('param', 'title', 'cfgField', ['foreign' => 'title', 'required' => 'y']);
+        die('ok');
+    }
     public function cfgFieldMetaAction() {
         field('param', 'cfgField', [
             'title' => 'Параметр',

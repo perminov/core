@@ -68,9 +68,11 @@ class Indi_Controller_Admin_CfgValue extends Indi_Controller_Admin_Exportable {
         $gen = $row->foreign('cfgField')->assign([
             'filter' => '`entityId` = "' . $row->foreign('fieldId')->relation . '"',
             'entityId' => t()->section->entityId,
-            'alias' => 'cfgValue',
-            'title' => t()->fields->field('cfgValue')->title
+            'alias' => 'cfgValue'
         ]);
+
+        //
+        if (Indi::uri()->action == 'form') $gen->title = t()->fields->field('cfgValue')->title;
 
         // Spoof `cfgValue` field
         t()->fields->exclude('cfgValue', 'alias')->append($gen);
