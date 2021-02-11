@@ -124,4 +124,19 @@ class Section2action_Row extends Indi_Db_Table_Row {
     public function setTitle() {
         $this->_setTitle();
     }
+
+
+    /**
+     *
+     */
+    public function onSave() {
+        Indi::ws(['type' => 'menu', 'to' => true]);
+    }
+
+    /**
+     *
+     */
+    public function onDelete() {
+        Indi::ws(['type' => 'menu', 'to' => true]);
+    }
 }

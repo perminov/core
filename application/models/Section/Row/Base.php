@@ -151,4 +151,18 @@ class Section_Row_Base extends Indi_Db_Table_Row {
             if ($this->isModified($prop) && !$this->$prop)
                 $this->$prop = $this->field($prop)->defaultValue;
     }
+
+    /**
+     *
+     */
+    public function onSave() {
+        Indi::ws(['type' => 'menu', 'to' => true]);
+    }
+
+    /**
+     *
+     */
+    public function onDelete() {
+        Indi::ws(['type' => 'menu', 'to' => true]);
+    }
 }
