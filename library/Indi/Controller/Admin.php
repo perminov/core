@@ -2318,6 +2318,9 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If we are in a root of interface, build the general layout
         if (Indi::uri('section') == 'index' && Indi::uri('action') == 'index') {
 
+            // If it's a refresh-menu request - flush fresh menu
+            if (isset(Indi::get()->menu)) jflush(true, ['menu' => $this->menu()]);
+
             // Get info
             $info = $this->info();
 
@@ -2376,14 +2379,25 @@ class Indi_Controller_Admin extends Indi_Controller {
     }
 
     /**
+     * Get menu, accessible for current user
+     *
+     * @return array
+     */
+    protected function menu() {
+
+        // Get menu
+        $menu = Section::menu(); $this->menuNotices($menu); $this->adjustMenu($menu);
+
+        // Return menu
+        return $menu;
+    }
+
+    /**
      * Prepare params to be flushed on successful sign-in or on existing session resume
      *
      * @return array
      */
     protected function info() {
-
-        // Get menu, accessible for current user
-        $menu = Section::menu(); $this->menuNotices($menu); $this->adjustMenu($menu);
 
         // Return
         return array(
@@ -2404,7 +2418,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 'title' => Indi::admin()->title(),
                 'uid' => Indi::admin()->profileId . '-' . Indi::admin()->id,
                 'role' => Indi::admin()->foreign('profileId')->title,
-                'menu' => $menu,
+                'menu' => $this->menu(),
                 'auth' => session_id() . ':' . Indi::ini('lang')->admin,
                 'dashboard' => Indi::admin()->foreign('profileId')->dashboard ?: false,
                 'maxWindows' => Indi::admin()->foreign('profileId')->maxWindows ?: 15,

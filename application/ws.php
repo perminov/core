@@ -630,7 +630,7 @@ function write($data, $index, &$channelA, &$clientA, $ini) {
     } else if ($data['type'] == 'notice' || $data['type'] == 'reload') {
 
         // If logging is On - do log
-        if ($ini['log']) file_put_contents('ws.' . $data['row'] . '.rcv.msg', date('Y-m-d H:i:s') . ' => ' . print_r($data, true) . "\n", FILE_APPEND);
+        if ($ini['log'] && $data['row']) file_put_contents('ws.' . $data['row'] . '.rcv.msg', date('Y-m-d H:i:s') . ' => ' . print_r($data, true) . "\n", FILE_APPEND);
 
         // Walk through roles, that recipients should have
         // If there are channels already exist for recipients, having such role
@@ -662,11 +662,14 @@ function write($data, $index, &$channelA, &$clientA, $ini) {
                     }
         }
 
-        // Else if message type is 'realtime'
-    } else if ($data['type'] == 'realtime' || $data['type'] == 'F5') {
+    // Else if message type is 'realtime'
+    } else if ($data['type'] == 'realtime' || $data['type'] == 'F5' || $data['type'] == 'menu') {
 
-        // If recepient channel exists - write message into channel
-        if ($clientA[$data['to']]) fwrite($clientA[$data['to']], encode(json_encode($data)));
+        // If recepient channel is given as `true` - send message to all recepients
+        if ($data['to'] === true) foreach ($clientA as $clientI) fwrite($clientI, encode(json_encode($data)));
+
+        // Else if recepient channel id is given and channel exists - write message into that channel
+        else if ($clientA[$data['to']]) fwrite($clientA[$data['to']], encode(json_encode($data)));
     }
 }
 
