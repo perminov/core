@@ -91,7 +91,7 @@ class Indi_Queue_L10n_AdminUi extends Indi_Queue_L10n {
             /**
              *
              */
-            } else if ($entityR->table == 'param') {
+            }/* else if ($entityR->table == 'param') {
 
                 //
                 $possibleParamIds = m('possibleElementParam')->fetchAll(
@@ -110,7 +110,7 @@ class Indi_Queue_L10n_AdminUi extends Indi_Queue_L10n {
 
                 //
                 $where = '`fieldId` IN ('. $fieldIds . ') AND `possibleParamId` IN (' . $possibleParamIds . ')';
-            }
+            }*/
 
             // If $this->fieldId prop is set, it means that we're here
             // because of Indi_Queue_L10n_FieldToggleL10n->getFractionChunkWHERE() call
