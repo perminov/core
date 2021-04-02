@@ -321,14 +321,43 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Access check
         if (!in($_['indiId']->id, is_numeric($scope[$ui]) ? $scope[$ui] : t()->{$scope[$ui]}->column('id'))) jflush(false);
 
+        // If we are editing grid column title, that was moved to tooltip due to icon
+        if (isset(Indi::post()->tooltip)
+            && $ui == 'grid'
+            && Indi::post()->icon
+            && !$_['indiId']->tooltip
+            && !$_['indiId']->foreign($_['indiId']->further ? 'further' : 'fieldId')->tooltip) {
+
+            // Force 'rename' logic to be executed instead of 'tooltip' logic
+            Indi::post()->rename = Indi::post()->tooltip; unset(Indi::post()->tooltip);
+        }
+
         // If $_POST['rename'] is set, e.g editing type is 'rename'
         if (isset(Indi::post()->rename)) {
 
             // Map
             $rename = array('grid' => 'alterTitle', 'field' => 'title', 'entity' => 'title', 'search' => 'alt');
 
+            // If ctrl-key was hold and we were editing grid column title
+            if ($ui == 'grid' && Indi::post()->ctrlKey) {
+
+                // Update grid column's underlying field's title
+                $_['indiId']
+                    ->foreign($_['indiId']->further ? 'further' : 'fieldId')
+                    ->assign(['title' => Indi::post()->rename])->save();
+
+                // Force grid column's own title to be empty string,
+                // so that underlying field's title will be used
+                Indi::post()->rename = '';
+
+            // Else if no ctrl-key was hold but new own title for grid column is going to be
+            // the same as for it's underlying field - force own one to be empty
+            } else if ($ui == 'grid'
+                && $_['indiId']->foreign($_['indiId']->further ? 'further' : 'fieldId')->title == Indi::post()->rename)
+                Indi::post()->rename = '';
+
             // Do rename
-            $_['indiId']->assign(array($rename[$ui] => Indi::post()->rename))->save();
+            $_['indiId']->assign([$rename[$ui] => Indi::post()->rename])->save();
 
         // If $_POST['rename'] is set, e.g editing type is 'rename'
         } else if (isset(Indi::post()->tooltip)) {
@@ -336,8 +365,26 @@ class Indi_Controller_Admin extends Indi_Controller {
             // Map
             $rename = array('grid' => 'tooltip', 'section' => 'help', 'section2action' => 'rename', 'search' => 'tooltip');
 
+            // If ctrl-key was hold and we were editing grid column tooltip
+            if ($ui == 'grid' && Indi::post()->ctrlKey) {
+
+                // Update grid column's underlying field's tooltip
+                $_['indiId']
+                    ->foreign($_['indiId']->further ? 'further' : 'fieldId')
+                    ->assign(['tooltip' => Indi::post()->tooltip])->save();
+
+                // Force grid column's own tooltip to be empty string,
+                // so that underlying field's tooltip will be used
+                Indi::post()->tooltip = '';
+
+            // Else if no ctrl-key was hold but new own tooltip for grid column is going to be
+            // the same as for it's underlying field - force own one to be empty
+            } else if ($ui == 'grid'
+                && $_['indiId']->foreign($_['indiId']->further ? 'further' : 'fieldId')->tooltip == Indi::post()->tooltip)
+                Indi::post()->tooltip = '';
+
             // Do rename
-            $_['indiId']->assign(array($rename[$ui] => Indi::post()->tooltip))->save();
+            $_['indiId']->assign([$rename[$ui] => Indi::post()->tooltip])->save();
 
         // Else if editing type if not rename
         } else {
@@ -348,7 +395,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 // Validity check
                 $_ += jcheck(array('gridId' => array('req' => false, 'rex' => 'int11', 'key' => $ui)), Indi::post());
 
-                // Get ids of grid columns that are currently accesible for current user
+                // Get ids of grid columns that are currently accessible for current user
                 $idA = t()->grid->select(': != 0')->column('id');
 
                 // Access check
