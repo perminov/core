@@ -1,5 +1,24 @@
 <?php
 class Indi_Controller_Migrate extends Indi_Controller {
+    public function cfgFieldMissingAction() {
+        cfgField('element', 'textarea', 'wide', [
+            'title' => 'Во всю ширину',
+            'columnTypeId' => 'BOOLEAN',
+            'elementId' => 'check',
+            'defaultValue' => '0',
+            'move' => 'refreshL10nsOnUpdate',
+        ]);
+        cfgField('element', 'time', 'displayFormat', [
+            'title' => 'Формат отображения',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'string',
+            'defaultValue' => 'H:i',
+            'move' => '',
+        ]);
+        field('param', 'fieldId', ['title' => 'Поле']);
+        grid('paramsAll', 'fieldId', 'entityId', ['move' => '']);
+        die('ok');
+    }
     public function cfgFieldRemoveLegacyAction() {
         entity('possibleElementParam')->delete();
         field('param', 'value')->delete();
@@ -84,7 +103,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
             'move' => 'optionAttrs',
             'entry' => '23',
         ]);
-        field('element', 'titleColumn', [
+        field('element', 'titleColumn', [ //
             'title' => 'Заголовочное поле',
             'columnTypeId' => 'INT(11)',
             'elementId' => 'combo',
@@ -94,7 +113,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
             'storeRelationAbility' => 'one',
             'entry' => '23',
         ]);
-        field('element', 'wide', [
+        field('element', 'wide', [ //
             'title' => 'Во всю ширину',
             'columnTypeId' => 'BOOLEAN',
             'elementId' => 'check',
@@ -102,7 +121,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
             'move' => 'when',
             'entry' => '23',
         ]);
-        field('element', 'maxlength', [
+        field('element', 'maxlength', [ //
             'title' => 'Максимальная длина в символах',
             'columnTypeId' => 'INT(11)',
             'elementId' => 'number',
@@ -125,7 +144,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
             'move' => 'inputMask',
             'entry' => '1',
         ]);
-        field('element', 'refreshL10nsOnUpdate', [
+        field('element', 'refreshL10nsOnUpdate', [ //
             'title' => 'Обновлять локализации для других языков',
             'columnTypeId' => 'BOOLEAN',
             'elementId' => 'check',
@@ -133,7 +152,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
             'move' => 'allowedTags',
             'entry' => '1',
         ]);
-        field('element', 'titleColumn', [
+        field('element', 'titleColumn', [ //
             'title' => 'Заголовочное поле',
             'columnTypeId' => 'INT(11)',
             'elementId' => 'combo',
@@ -183,7 +202,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
             'move' => 'titleColumn',
             'entry' => '12',
         ]);
-        field('element', 'when', [
+        field('element', 'when', [ //
             'title' => 'Когда',
             'columnTypeId' => 'SET',
             'elementId' => 'combo',
@@ -192,8 +211,8 @@ class Indi_Controller_Migrate extends Indi_Controller {
             'storeRelationAbility' => 'one',
             'entry' => '12',
         ]);
-        enumset('element', 'when', 'month', ['title' => 'Месяц', 'move' => '']);
-        enumset('element', 'when', 'week', ['title' => 'День недели', 'move' => 'month']);
+        cfgEnumset('element', 'calendar', 'when', 'month', ['title' => 'Месяц', 'move' => '']);
+        cfgEnumset('element', 'calendar', 'when', 'week', ['title' => 'День недели', 'move' => 'month']);
         field('element', 'wide', [
             'title' => 'Во всю ширину',
             'columnTypeId' => 'BOOLEAN',
@@ -317,9 +336,9 @@ class Indi_Controller_Migrate extends Indi_Controller {
             'storeRelationAbility' => 'one',
             'entry' => '1',
         ]);
-        enumset('element', 'vtype', 'none', ['title' => 'Нет', 'move' => '']);
-        enumset('element', 'vtype', 'email', ['title' => 'Email', 'move' => 'none']);
-        enumset('element', 'vtype', 'url', ['title' => 'URL', 'move' => 'email']);
+        cfgEnumset('element', 'string', 'vtype', 'none', ['title' => 'Нет', 'move' => '']);
+        cfgEnumset('element', 'string', 'vtype', 'email', ['title' => 'Email', 'move' => 'none']);
+        cfgEnumset('element', 'string', 'vtype', 'url', ['title' => 'URL', 'move' => 'email']);
         field('element', 'allowTypes', [
             'title' => 'Допустимые типы',
             'columnTypeId' => 'VARCHAR(255)',
@@ -341,8 +360,8 @@ class Indi_Controller_Migrate extends Indi_Controller {
             'storeRelationAbility' => 'many',
             'entry' => '19',
         ]);
-        enumset('element', 'when', 'month', ['title' => 'Месяц', 'move' => '']);
-        enumset('element', 'when', 'week', ['title' => 'День недели', 'move' => 'month']);
+        cfgEnumset('element', 'datetime', 'when', 'month', ['title' => 'Месяц', 'move' => '']);
+        cfgEnumset('element', 'datetime', 'when', 'week', ['title' => 'День недели', 'move' => 'month']);
         alteredField('fields', 'entry', ['mode' => 'hidden']);
         section('params', ['extendsPhp' => 'Indi_Controller_Admin_CfgValue']);
         section('fields', ['filter' => '`entry` = "0"']);
