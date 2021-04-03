@@ -1512,8 +1512,8 @@ function t($arg = null) {
  *
  * @return Indi_Db_Table
  */
-function m($arg = null) {
-    return func_num_args() ? Indi::model($arg) : t()->model;
+function m($arg = null, $check = false) {
+    return func_num_args() ? Indi::model($arg, $check) : t()->model;
 }
 
 /**
@@ -1599,10 +1599,11 @@ function field($table, $alias, array $ctor = array()) {
     $byprop = Indi::rexm('int11', $alias) ? 'id' : 'alias';
 
     // Try to find `field` entry
-    $fieldR = Indi::model('Field')->fetchRow(array(
+    $fieldR = Indi::model('Field')->fetchRow([
         '`entityId` = "' . $entityId . '"',
+        '`entry` = "' . (int) $ctor['entry'] . '"',
         '`' . $byprop . '` = "' . $alias . '"'
-    ));
+    ]);
 
     // If $ctor arg is an empty array - return `field` entry, if found, or null otherwise.
     // This part of this function differs from such part if other similar functions, for example grid() function,
@@ -1612,6 +1613,61 @@ function field($table, $alias, array $ctor = array()) {
     // If `entityId` and/or `alias` prop are not defined within $ctor arg
     // - use values given by $table and $alias args
     foreach (ar('entityId,alias') as $prop)
+        if (!array_key_exists($prop, $ctor))
+            $ctor[$prop] = $$prop;
+
+    // If `grid` entry was not found - create it
+    if (!$fieldR) $fieldR = Indi::model('Field')->createRow();
+
+    // Assign `entityId` prop first
+    if ($ctor['entityId'] && $fieldR->entityId = $ctor['entityId']) unset($ctor['entityId']);
+
+    // Assign other props and save
+    $fieldR->assign($ctor)->save();
+
+    // Return `field` entry (newly created, or existing but updated)
+    return $fieldR;
+}
+
+/**
+ * Short-hand function that allows to manipulate on config-field, stored as `field` entry,
+ * and identified by $table, $entry and $alias args.
+ * If only three args given - function will fetch and return appropriate `field` entry (or null, if not found)
+ * If $ctor arg is given and it's a non-empty array - function will create new `field` entry, or update existing if found
+ *
+ * @param string|int $table Entity ID or table name
+ * @param string|int $entry ID or alias of an entry, that config-field is applicable for
+ * @param string $alias Field's alias
+ * @param array $ctor Props to be involved in insert/update
+ * @return Field_Row|null
+ */
+function cfgField($table, $entry, $alias, array $ctor = array()) {
+
+    // Get `entityId` according to $table arg
+    $entityId = entity($table)->id;
+
+    // If $alias arg is an integer - assume it's a `field` entry's `id`, otherwise it's a `alias`
+    $byprop = Indi::rexm('int11', $alias) ? 'id' : 'alias';
+
+    // If entry's alias is specified instead of id - get the id,
+    // as we need it to check whether such cfgField is already defined for that entry
+    if (!Indi::rexm('int11', $entry)) $entry = m($table)->fetchRow('`alias` = "' . $entry . '"')->id;
+
+    // Try to find `field` entry
+    $fieldR = Indi::model('Field')->fetchRow(array(
+        '`entityId` = "' . $entityId . '"',
+        '`entry` = "' . $entry . '"',
+        '`' . $byprop . '` = "' . $alias . '"'
+    ));
+
+    // If $ctor arg is an empty array - return `field` entry, if found, or null otherwise.
+    // This part of this function differs from such part if other similar functions, for example grid() function,
+    // because presence of $table and $alias args - is not enough for `field` entry to be created
+    if (!$ctor) return $fieldR;
+
+    // If `entityId`, `entry` and/or `alias` prop are not defined within $ctor arg
+    // - use values given by $table and $alias args
+    foreach (ar('entityId,entry,alias') as $prop)
         if (!array_key_exists($prop, $ctor))
             $ctor[$prop] = $$prop;
 
@@ -1757,6 +1813,59 @@ function enumset($table, $field, $alias, $ctor = false) {
 
     // Get `fieldId` according to $table and $field args
     $fieldId = field($table, $field)->id;
+
+    // Try to find `grid` entry
+    $enumsetR = Indi::model('Enumset')->fetchRow(array(
+        '`fieldId` = "' . $fieldId . '"',
+        '`alias` = "' . $alias . '"'
+    ));
+
+    // If $ctor arg is non-false and is not and empty array - return `grid` entry, else
+    if (!$ctor && !is_array($ctor)) return $enumsetR;
+
+    // If `fieldId` and/or `alias` prop are not defined within $ctor arg
+    // - use values given by $table+$field and $alias args
+    if (!is_array($ctor)) $ctor = array();
+    foreach (ar('fieldId,alias') as $prop)
+        if (!array_key_exists($prop, $ctor))
+            $ctor[$prop] = $$prop;
+
+    // If `enumset` entry already exists - do not allow re-linking it from one field to another
+    if ($enumsetR) unset($ctor['fieldId']);
+
+    // Else - create it
+    else $enumsetR = Indi::model('Enumset')->createRow();
+
+    // If $ctor['color'] is given - apply color-box
+    if ($ctor['color']) $ctor['title'] = '<span class="i-color-box" style="background: '
+        . $ctor['color'] . ';"></span>' . strip_tags($ctor['title']);
+
+    // Assign other props and save
+    $enumsetR->assign($ctor)->save();
+
+    // Return `enumset` entry (newly created, or existing but updated)
+    return $enumsetR;
+}
+
+/**
+ * Short-hand function that allows to manipulate `entry` entry, identified by $table, $field and $alias args.
+ * If only those two args given - function will fetch and return appropriate `entry` entry (or null, if not found)
+ * If 4th arg - $ctor - is given and it's `true` or an (even empty) array - function will create new `enumset`
+ * entry, or update existing if found
+ *
+ * If 4th arg is an array containing value under 'color' key - color box will be injected into `enumset` entry's `title`
+ *
+ * @param string|int $table Entity ID or table name
+ * @param string|int $entry ID or alias of an entry, that config-field is applicable for
+ * @param string $field Field alias
+ * @param string $alias Enumset alias
+ * @param bool|array $ctor
+ * @return Enumset_Row|null
+ */
+function cfgEnumset($table, $entry, $field, $alias, $ctor = false) {
+
+    // Get `fieldId` according to $table and $field args
+    $fieldId = cfgField($table, $entry, $field)->id;
 
     // Try to find `grid` entry
     $enumsetR = Indi::model('Enumset')->fetchRow(array(
@@ -2072,32 +2181,50 @@ function param($table, $field, $alias, $value = null) {
     // Get `fieldId` according to $table and $field args
     $fieldR = field($table, $field); $fieldId = $fieldR->id;
 
-    // Get underlying `possibleElementParam` entry's id
-    $possibleParamId = Indi::model('PossibleElementParam')->fetchRow(array(
-        '`elementId` = "' . $fieldR->elementId . '"',
-        '`alias` = "' . $alias . '"'
-    ))->id;
+    // Where clause for finding `param` entry
+    $where = ['`fieldId` = "' . $fieldId . '"'];
+
+    // If 'possibleElementParam' model still exists, it means we're yet using legacy logic
+    if (m('PossibleElementParam', true)) {
+
+        // Get underlying `possibleElementParam` entry's id
+        $possibleParamId = m('PossibleElementParam')->fetchRow([
+            '`elementId` = "' . $fieldR->elementId . '"',
+            '`alias` = "' . $alias . '"'
+        ])->id;
+
+        // Use it in WHERE clause
+        $where []= '`possibleParamId` = "' . $possibleParamId . '"';
+
+    // Else
+    } else {
+
+        // Get config-field id
+        $cfgField = cfgField('element', $fieldR->elementId, $alias)->id;
+
+        // Use it in WHERE clause
+        $where []= '`cfgField` = "' . $cfgField . '"';
+    }
 
     // Try to find `param` entry
-    $paramR = Indi::model('Param')->fetchRow(array(
-        '`fieldId` = "' . $fieldId . '"',
-        '`possibleParamId` = "' . $possibleParamId . '"'
-    ));
+    $paramR = Indi::model('Param')->fetchRow($where);
 
     // If $ctor arg is non-false and is not and empty array - return `param` entry, else
     if (func_num_args() < 4) return $paramR;
 
     // Build $ctor
-    $ctor = is_array($value) ? $value : array('value' => $value);
-    foreach (ar('fieldId,possibleParamId,value') as $prop)
+    $ctor = is_array($value) ? $value : array('value' => $value, 'cfgValue' => $cfgValue = $value);
+    foreach (ar('fieldId,possibleParamId,cfgField'
+        . rif(!is_array($value), ',value')
+        . rif(!is_array($cfgValue), ',cfgValue')) as $prop)
         if (!array_key_exists($prop, $ctor))
             $ctor[$prop] = $$prop;
 
     // If `param` entry already exists - do not allow re-linking it from one field to another
-    if ($paramR) unset($ctor['fieldId'], $ctor['possibleParamId']);
+    if ($paramR) unset($ctor['fieldId'], $ctor['possibleParamId'], $ctor['cfgField']);
 
     // Else - create it
-    else $paramR = Indi::model('Param')->createRow();
+    else $paramR = m('Param')->createRow();
 
     // Assign other props and save
     $paramR->assign($ctor)->save();

@@ -313,11 +313,20 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
      */
     public function export() {
 
+        // Shortcut
+        $fieldR = $this->foreign('fieldId');
+
         // Return
-        return "enumset('" .
-            $this->foreign('fieldId')->foreign('entityId')->table . "', '" .
-            $this->foreign('fieldId')->alias . "', '" .
-            $this->alias . "', " . $this->_ctor() . ");";
+        return $fieldR->entry
+            ? "cfgEnumset('" .
+                $fieldR->foreign('entityId')->table . "', '" .
+                ($fieldR->foreign('entry')->alias ?: $fieldR->entry) . "', '" .
+                $fieldR->alias . "', '" .
+                $this->alias . "', " . $this->_ctor() . ");"
+            : "enumset('" .
+                $fieldR->foreign('entityId')->table . "', '" .
+                $fieldR->alias . "', '" .
+                $this->alias . "', " . $this->_ctor() . ");";
     }
 
     /**
@@ -335,67 +344,27 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
      * among all `enumset` entries having same `fieldId`
      * according to the values `move` prop
      *
-     * @param string $withinField
      * @param null|string $after
+     * @param string $withinFields
      * @return string|Indi_Db_Table_Row
      */
-    public function position($withinField = 'fieldId', $after = null) {
+    public function position($after = null, $withinFields = 'fieldId') {
+
+        // Build within-fields WHERE clause
+        $wfw = [];
+        foreach (ar($withinFields) as $withinField)
+            $wfw []= '`' . $withinField . '` = "' . $this->$withinField . '"';
 
         // Get ordered enumset aliases
         $enumsetA_alias = Indi::db()->query(
-            'SELECT `alias` FROM `:p` :p ORDER BY `move`',
-            $this->_table,
-            rif($withinField, ' WHERE `$1` = "' . $this->$withinField . '"')
+            'SELECT `alias` FROM `:p` :p ORDER BY `move`', $this->_table, rif($within = im($wfw, ' AND '), 'WHERE $1')
         )->fetchAll(PDO::FETCH_COLUMN);
 
         // Get current position
         $currentIdx = array_flip($enumsetA_alias)[$this->alias];
 
-        // If $after arg is null or not given
-        if ($after === null) {
-
-            // If position of current enumset is non-zero, e.g. is not first
-            // return alias of enumset, that current field is positioned after,
-            // else return empty string, indicating that current enumset is on top
-            return $currentIdx ? $enumsetA_alias[$currentIdx - 1] : '';
-
-            // Else do positioning
-        } else {
-
-            // If current enumset should moved to top
-            if ($after === '') {
-
-                // If current enumset is already on top - return
-                if (!$currentIdx) return $this;
-
-                // Else set direction to 'up', and qty of $this->move() calls
-                $direction = 'up'; $count = $currentIdx;
-
-            // Else
-            } else {
-
-                // Get required position of current field
-                $mustbeIdx = array_flip($enumsetA_alias)[$after] + 1;
-
-                // If it's already at required position - do nothing
-                if ($mustbeIdx == $currentIdx) return $this;
-
-                // Set direction
-                $direction = $mustbeIdx > $currentIdx ? 'down' : 'up';
-
-                // Set count of $this->move() calls
-                $count = abs($currentIdx - $mustbeIdx);
-
-                // If $direction is 'down' - decrement $count
-                if ($direction == 'down') $count --;
-            }
-
-            // Do positioning
-            for ($i = 0; $i < $count; $i++) $this->move($direction);
-
-            // Return this
-            return $this;
-        }
+        // Do positioning
+        return $this->_position($after, $enumsetA_alias, $currentIdx, $within);
     }
 
     /**
@@ -410,7 +379,7 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
         $after = $this->_system['move']; unset($this->_system['move']);
 
         // Position field for it to be after field, specified by $this->_system['move']
-        $this->position('fieldId', $after);
+        $this->position($after);
     }
 
     /**

@@ -1643,7 +1643,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
         unset($ctor['l10n']);
 
         // Exclude props that will be already represented by shorthand-fn args
-        foreach (ar('entityId,alias') as $arg) unset($ctor[$arg]);
+        foreach (ar('entityId,alias' . rif($this->entry, ',entry')) as $arg) unset($ctor[$arg]);
 
         // Foreach $ctor prop
         foreach ($ctor as $prop => &$value) {
@@ -1677,8 +1677,14 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
      */
     public function export() {
 
+        // Shortcuts
+        $table = $this->foreign('entityId')->table;
+        $entry = $this->foreign('entry')->alias ?: $this->entry;
+
         // Build `field` entry creation line
-        $lineA[] = "field('" . $this->foreign('entityId')->table . "', '" . $this->alias . "', " . $this->_ctor() . ");";
+        $lineA[] = $this->entry
+            ? "cfgField('" . $table . "', '" . $entry . "', '" . $this->alias . "', " . $this->_ctor() . ");"
+            : "field('" . $table . "', '" . $this->alias . "', " . $this->_ctor() . ");";
 
         // Foreach `enumset` entry, nested within current `field` entry
         // - build `enumset` entry's creation expression
@@ -1782,67 +1788,28 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
      * among all `field` entries having same `entityId`
      * according to the values `move` prop
      *
-     * @param string $withinField
      * @param null|string $after
+     * @param string $withinFields
      * @return string|Indi_Db_Table_Row
      */
-    public function position($withinField = 'entityId', $after = null) {
+    public function position($after = null, $withinFields = 'entityId,entry') {
+
+        // Build within-fields WHERE clause
+        $wfw = [];
+        foreach (ar($withinFields) as $withinField)
+            if (array_key_exists($withinField, $this->_original))
+                $wfw []= '`' . $withinField . '` = "' . $this->$withinField . '"';
 
         // Get ordered fields aliases
         $fieldA_alias = Indi::db()->query(
-            'SELECT `alias` FROM `:p` :p ORDER BY `move`',
-            $this->_table,
-            rif($withinField, ' WHERE `$1` = "' . $this->$withinField . '"')
+            'SELECT `alias` FROM `:p` :p ORDER BY `move`', $this->_table, rif($within = im($wfw, ' AND '), 'WHERE $1')
         )->fetchAll(PDO::FETCH_COLUMN);
 
         // Get current position
         $currentIdx = array_flip($fieldA_alias)[$this->alias];
 
-        // If $after arg is null or not given
-        if ($after === null) {
-
-            // If position of current field is non-zero, e.g. is not first
-            // return alias of field, that current field is positioned after,
-            // else return empty string, indicating that current field is on top
-            return $currentIdx ? $fieldA_alias[$currentIdx - 1] : '';
-
-        // Else do positioning
-        } else {
-
-            // If current field should moved to top
-            if ($after === '') {
-
-                // If current field is already on top - return
-                if (!$currentIdx) return $this;
-
-                // Else set direction to 'up', and qty of $this->move() calls
-                $direction = 'up'; $count = $currentIdx;
-
-            // Else
-            } else {
-
-                // Get required position of current field
-                $mustbeIdx = array_flip($fieldA_alias)[$after] + 1;
-
-                // If it's already at required position - do nothing
-                if ($mustbeIdx == $currentIdx) return $this;
-
-                // Set direction
-                $direction = $mustbeIdx > $currentIdx ? 'down' : 'up';
-
-                // Set count of $this->move() calls
-                $count = abs($currentIdx - $mustbeIdx);
-
-                // If $durection is  'down' - decrement $count
-                if ($direction == 'down') $count --;
-            }
-
-            // Do positioning
-            for ($i = 0; $i < $count; $i++) $this->move($direction);
-
-            // Return this
-            return $this;
-        }
+        // Do positioning
+        return $this->_position($after, $fieldA_alias, $currentIdx, $within);
     }
 
     /**
@@ -1857,6 +1824,6 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
         $after = $this->_system['move']; unset($this->_system['move']);
 
         // Position field for it to be after field, specified by $this->_system['move']
-        $this->position('entityId', $after);
+        $this->position($after);
     }
 }

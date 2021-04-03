@@ -17,6 +17,7 @@ class Grid_Row extends Indi_Db_Table_Row {
             else if ($columnName == 'fieldId') $value = field(section($this->sectionId)->entityId, $value)->id;
             else if ($columnName == 'further') $value = field(field(section($this->sectionId)->entityId, $this->fieldId)->relation, $value)->id;
             else if ($columnName == 'gridId') $value = grid($this->sectionId, $value)->id;
+            else if ($columnName == 'move') return $this->_system['move'] = $value;
         }
 
         // Call parent
@@ -169,16 +170,61 @@ class Grid_Row extends Indi_Db_Table_Row {
     }
 
     /**
+     * Get the the alias of the `field` entry,
+     * that current `field` entry is positioned after
+     * among all `field` entries having same `entityId`
+     * according to the values `move` prop
+     *
+     * @param null|string $after
+     * @param string $withinFields
+     * @return string|Indi_Db_Table_Row
+     */
+    public function position($after = null, $withinFields = 'sectionId,gridId,group') {
+
+        // Build within-fields WHERE clause
+        $wfw = [];
+        foreach (ar($withinFields) as $withinField)
+            $wfw []= '`' . $withinField . '` = "' . $this->$withinField . '"';
+
+        // Get ordered fields aliases
+        $fieldA_alias = Indi::db()->query('
+            SELECT `g`.`id`, `f`.`alias` 
+            FROM `field` `f`, `grid` `g`
+            WHERE 1 
+                AND `f`.`id` = IF(`g`.`further` != "0", `g`.`further`, `g`.`fieldId`)
+                AND :p  
+            ORDER BY `g`.`move`
+        ', $within = im($wfw, ' AND '))->fetchAll(PDO::FETCH_KEY_PAIR);
+
+        // Get current position
+        $currentIdx = array_flip(array_keys($fieldA_alias))[$this->id]; $fieldA_alias = array_values($fieldA_alias);
+
+        // Do positioning
+        return $this->_position($after, $fieldA_alias, $currentIdx, $within);
+    }
+
+    /**
      * Make sure parent gridcol's width will be adjusted if need
      */
     public function onSave() {
 
-        // If `width` was not affected, or this gridcol is a top-level gridcol - do nothing
-        if (!$this->affected('width') || !$this->gridId) return;
+        // If `width` was not affected, or this gridcol is a top-level gridcol
+        if ($this->affected('width') && $this->gridId) {
 
-        // Affect parent gridcol's width
-        $this->foreign('gridId')->width += $this->adelta('width');
-        $this->foreign('gridId')->save();
+            // Affect parent gridcol's width
+            $this->foreign('gridId')->width += $this->adelta('width');
+            $this->foreign('gridId')->save();
+        }
+
+        // Do positioning, if $this->_system['move'] is set
+        if (array_key_exists('move', $this->_system)) {
+
+            // Get field, that current field should be moved after
+            $after = $this->_system['move']; unset($this->_system['move']);
+
+            // Position field for it to be after field, specified by $this->_system['move']
+            $this->position($after);
+        }
     }
 
     /**

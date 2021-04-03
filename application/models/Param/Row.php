@@ -15,7 +15,7 @@ class Param_Row extends Indi_Db_Table_Row_Noeval {
         unset($ctor['id'], $ctor['title']);
 
         // Exclude props that will be already represented by shorthand-fn args
-        foreach (ar('fieldId,possibleParamId') as $arg) unset($ctor[$arg]);
+        foreach (ar('fieldId,possibleParamId,cfgField') as $arg) unset($ctor[$arg]);
 
         // Stringify
         return _var_export($ctor);
@@ -32,7 +32,7 @@ class Param_Row extends Indi_Db_Table_Row_Noeval {
         return "param('" .
             $this->foreign('fieldId')->foreign('entityId')->table . "', '" .
             $this->foreign('fieldId')->alias . "', '" .
-            $this->foreign('possibleParamId')->alias . "', " . $this->_ctor() . ");";
+            $this->foreign('cfgField')->alias . "', " . $this->_ctor() . ");";
     }
 
     /**
