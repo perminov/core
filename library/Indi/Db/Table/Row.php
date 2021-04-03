@@ -1835,7 +1835,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         // because we can have situations, there order is not set at all and if so, we won't use ORDER clause
         // So, if order is empty, the results will be retrieved in the order of their physical placement in
         // their database table
-        if (!is_array($order) && preg_match('~^[a-zA-Z0-9]$~', $order)) $order = '`' . $order . '`';
+        if (!is_array($order) && preg_match('~^[a-zA-Z0-9_]+$~', $order)) $order = '`' . $order . '`';
 
         // If fetch-mode is 'keyword'
         if ($selectedTypeIsKeyword) {
