@@ -323,7 +323,10 @@ class Indi_Db {
                     if ($fieldA[$paramI['cfgField']]['relation'] == 5)  $paramI['cfgValue'] = $paramI['cfgValue']
                         ? im(array_column(array_intersect_key($fieldA, array_flip(explode(',', $paramI['cfgValue']))), 'alias'))
                         : '';
-                    self::$_cfgValue['certain']['field'][$paramI['fieldId']][$fieldA[$paramI['cfgField']]['alias']] = $paramI['cfgValue'];
+                    self::$_cfgValue['certain']['field'][$paramI['fieldId']][$fieldA[$paramI['cfgField']]['alias']]
+                        = preg_match('~^{"[a-zA-Z]{2,5}":~', $paramI['cfgValue'])
+                            ? json_decode($paramI['cfgValue'])->{Indi::ini('lang')->admin}
+                            : $paramI['cfgValue'];
                 }
             }
             unset($paramA);

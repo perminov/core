@@ -56,7 +56,7 @@ class Grid_Row extends Indi_Db_Table_Row {
         $ctor = $this->_original;
 
         // Exclude `id` and `move` as they will be set automatically by MySQL and Indi Engine, respectively
-        unset($ctor['id'], $ctor['move']);
+        unset($ctor['id']);
 
         // Exclude props that are already represented by one of shorthand-fn args
         foreach (ar('sectionId,fieldId,alias,further') as $arg) unset($ctor[$arg]);
@@ -73,6 +73,10 @@ class Grid_Row extends Indi_Db_Table_Row {
             // Exclude `title` prop, if it was auto-created
             else if ($prop == 'title' && ($tf = $this->model()->titleField()) && $tf->storeRelationAbility != 'none')
                 unset($ctor[$prop]);
+
+            // Else if $prop is 'move' - get alias of the field, that current field is after,
+            // among fields with same value of `entityId` prop
+            else if ($prop == 'move') $value = $this->position();
 
             // Else if prop contains keys - use aliases instead
             else if ($field->storeRelationAbility != 'none') {

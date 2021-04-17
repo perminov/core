@@ -102,7 +102,7 @@ class Indi_Queue_L10n extends Indi_Queue {
                 $value = $params['toggle'] == 'n'
                     ? $r->language($field, $params['source'])
                     : (preg_match('~^{"~', $r->$field)
-                        ? json_decode($value)->{$params['source']}
+                        ? json_decode($r->$field)->{$params['source']}
                         : $r->language($field, $params['source']) ?: $r->$field);
 
                 // Create `queueItem` entry
@@ -174,7 +174,16 @@ class Indi_Queue_L10n extends Indi_Queue {
                     // Build WHERE clause
                     $queueChunkR->where = sprintf('`fieldId` = "%s"', $fieldR_having_l10nY->id);
 
-                // Else
+                // Else if it's a config-field
+                } else if ($fieldR_having_l10nY->entry) {
+
+                    // Table and field names
+                    $table = 'param'; $field = 'cfgValue';
+
+                    // Build WHERE clause
+                    if ($where) $queueChunkR->where = im($where, ' AND ');
+
+                //
                 } else {
 
                     // Build WHERE clause

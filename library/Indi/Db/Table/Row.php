@@ -1104,10 +1104,17 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     protected function _localize(array &$data) {
 
+        // If it's an enumset-entry, and it's field has l10n turned on
+        if ($this->_table == 'enumset' && $this->foreign('fieldId')->l10n == 'y') $lfA = ['title'];
+
+        // Else if it's a param-entry, and it's cfgField has l10n turned on
+        else if ($this->_table == 'param' && $this->foreign('cfgField')->l10n == 'y') $lfA = ['cfgValue'];
+
+        // Else
+        else $lfA = Indi_Db::l10n($this->_table);
+
         // If current entity has no localized fields - return
-        if (!$lfA = $this->_table == 'enumset' && $this->foreign('fieldId')->l10n == 'y'
-            ? array('title')
-            : Indi_Db::l10n($this->_table)) return;
+        if (!$lfA) return;
 
         // If there are localized fields, but none of them were modified - return
         if (!$mlfA = array_intersect($lfA, array_keys($this->_modified))) return;

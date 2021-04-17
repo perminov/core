@@ -91,35 +91,71 @@ class Indi_Queue_L10n_AdminUi extends Indi_Queue_L10n {
             /**
              *
              */
-            }/* else if ($entityR->table == 'param') {
+            } else if ($entityR->table == 'param') {
 
                 //
-                $possibleParamIds = m('possibleElementParam')->fetchAll(
-                    '`alias` IN ("displayDateFormat", "measure", "inputMask")'
-                )->column('id', true);
+                if ($this->fieldId) {
 
-                // Get field ids
-                $fieldIds = im(Indi::db()->query('
-                    SELECT DISTINCT `p`.`fieldId` 
-                    FROM `param` `p`, `field` `f`
-                    WHERE 1
-                      AND `p`.`possibleParamId` IN (' . $possibleParamIds . ')
-                      AND `p`.`fieldId` = `f`.`id`
-                      AND `f`.`entityId` IN (' . $master['entity']['instances'] . ')
-                ')->fetchAll(PDO::FETCH_COLUMN));
+                    //
+                    if (m('Field')->fetchRow($this->fieldId)->entityId == $entityR->id) {
+
+                        // Get config field ids
+                        $cfgFieldIds = im(Indi::db()->query('
+                            SELECT DISTINCT `p`.`cfgField` 
+                            FROM `param` `p`, `field` `f`
+                            WHERE 1
+                              AND `p`.`cfgField` = `f`.`id`
+                              AND `f`.`entityId` IN (' . $master['entity']['instances'] . ')
+                        ')->fetchAll(PDO::FETCH_COLUMN)) ?: 0;
+
+                        //
+                        $where = '`cfgField` IN ('. $cfgFieldIds . ')';
+
+                    //
+                    } else {
+
+                        // Get config field ids
+                        $cfgFieldIds = m('Field')->fetchAll([
+                            '`entityId` = "4"',
+                            '`entry` != "0"',
+                            '`id` = "' . $this->fieldId . '"',
+                        ])->column('id', true) ?: 0;
+
+                        // Get field ids
+                        $fieldIds = im(Indi::db()->query('
+                            SELECT DISTINCT `p`.`fieldId` 
+                            FROM `param` `p`, `field` `f`
+                            WHERE 1
+                              AND `p`.`cfgField` IN (' . $cfgFieldIds . ')
+                              AND `p`.`fieldId` = `f`.`id`
+                              AND `f`.`entityId` IN (' . $master['entity']['instances'] . ')
+                        ')->fetchAll(PDO::FETCH_COLUMN)) ?: 0;
+
+                        //
+                        $where = '`fieldId` IN ('. $fieldIds . ') AND `cfgField` IN (' . $cfgFieldIds . ')';
+                    }
 
                 //
-                $where = '`fieldId` IN ('. $fieldIds . ') AND `possibleParamId` IN (' . $possibleParamIds . ')';
-            }*/
+                } else $where = 'FALSE';
+            }
 
             // If $this->fieldId prop is set, it means that we're here
             // because of Indi_Queue_L10n_FieldToggleL10n->getFractionChunkWHERE() call
             // so out aim here to obtain WHERE clause for certain field's chunk,
             // and appendChunk() call will return WHERE clause rather than `queueChunk` instance
             if ($this->fieldId) {
-                if ($fieldR_certain = m($entityR->id)->fields($this->fieldId))
+
+                // If certain field is a regular field
+                if ($fieldR_certain = m($entityR->id)->fields($this->fieldId)) {
                     if ($master['entity']['value'] == 'y' || ($where && $fieldR_certain->relation != 6))
                         return $this->appendChunk($queueTaskR, $entityR, $fieldR_certain, $where ? [$where] : []);
+
+                // Else if it's a config field
+                } else if ($fieldR_certain = m('Field')->fetchRow(['`id` = "' . $this->fieldId . '"', '`entry` != "0"'])) {
+                    if ($entityR->table == 'param' && $where && $fieldR_certain->relation != 6) return $where;
+                    else if ($entityR->table == 'enumset' && $fieldR_certain->relation == 6)
+                        return $this->appendChunk($queueTaskR, $entityR, $fieldR_certain, $where ? [$where] : []);
+                }
 
             // Foreach `field` entry, having `l10n` = "y"
             } else foreach (m($entityR->id)->fields()->select('y', 'l10n') as $fieldR_having_l10nY)
@@ -127,7 +163,7 @@ class Indi_Queue_L10n_AdminUi extends Indi_Queue_L10n {
                     $this->appendChunk($queueTaskR, $entityR, $fieldR_having_l10nY, $where ? [$where] : []);
         }
 
-        // Order chunks to be sure that all dependen fields will be processed after their dependencies
+        // Order chunks to be sure that all dependent fields will be processed after their dependencies
         $this->orderChunks($queueTaskR->id);
 
         // Return `queueTask` entry
@@ -379,9 +415,11 @@ class Indi_Queue_L10n_AdminUi extends Indi_Queue_L10n {
          * @param $item
          * @param $ordered
          */
-        function ___($dict, $item, &$ordered) {
-            foreach ($item['consider'] ?: [] as $fieldId) if ($dict[$fieldId]) ___($dict, $dict[$fieldId], $ordered);
-            $ordered[$item['fieldId']] = $item['queueChunkId'];
+        if (!function_exists('___')) {
+            function ___($dict, $item, &$ordered) {
+                foreach ($item['consider'] ?: [] as $fieldId) if ($dict[$fieldId]) ___($dict, $dict[$fieldId], $ordered);
+                $ordered[$item['fieldId']] = $item['queueChunkId'];
+            }
         }
 
         // Build new order as index => queueChunkId pairs

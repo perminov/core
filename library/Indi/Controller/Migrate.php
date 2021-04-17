@@ -17,6 +17,13 @@ class Indi_Controller_Migrate extends Indi_Controller {
         ]);
         field('param', 'fieldId', ['title' => 'Поле']);
         grid('paramsAll', 'fieldId', 'entityId', ['move' => '']);
+        field('param', 'cfgField', ['filter' => '`entry` != "0"']);
+        field('notice', 'type', ['title' => 'Фракция']);
+        section('fields', ['extendsJs' => 'Indi.lib.controller.Field']);
+        section('fieldsAll', ['extendsJs' => 'Indi.lib.controller.Field']);
+        field('queueTask', 'chunk', ['move' => 'params']);
+        field('queueChunk', 'itemsBytes', ['move' => 'queueSize']);
+        grid('search', 'consistence', ['move' => '']);
         die('ok');
     }
     public function cfgFieldRemoveLegacyAction() {

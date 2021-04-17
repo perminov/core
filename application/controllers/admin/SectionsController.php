@@ -1,17 +1,30 @@
 <?php
 class Admin_SectionsController extends Indi_Controller_Admin_Exportable {
 
+    /**
+     * Contents of admin/classic/app.js for checking js-controllers files presence
+     *
+     * @var string
+     */
+    public static $systemAppJs = '';
+
+    /**
+     * Create js-controller file for selected section
+     */
     public function jsAction() {
 
-        // JS-controller files for sections of type 'system' - will be created in '/core',                                                          //$repositoryDirA = array('s' => 'core', 'o' => 'coref', 'p' => 'www');
-        // 'often' - in '/coref', 'project' - in '/www'
+        // JS-controller files for sections of type 'system' - will be created in '/core',
+        // 'often' - in '/coref', 'project' - in '/www', but beware that js-controller files
+        // created for system sections should be moved from /core/js/admin/app/controller
+        // to Indi Engine system app source code into app/controller folder, and then should be
+        // compiled by 'sencha app build --production' command, so that admin/classic/app.js bundle to be refreshed
         $repoDirA = array('s' => 'core', 'o' => 'coref', 'p' => 'www');
 
         // If current section has a type, that is (for some reason) not in the list of known types
         if (!in($this->row->type, array_keys($repoDirA)))
 
             // Flush an error
-            jflush(false, 'Can\'t detect the alias of repository, associated with a type of the chosen section');
+            jflush(false, 'Can\'t detect fraction of selected section');
 
         // Build the dir name, that controller's js-file should be created in
         $dir = Indi::dir(DOC . STD . '/' . $repoDirA[$this->row->type] . '/js/admin/app/controller/');
@@ -51,6 +64,9 @@ class Admin_SectionsController extends Indi_Controller_Admin_Exportable {
         jflush(true);
     }
 
+    /**
+     * Create php-controller file for selected section
+     */
     public function phpAction() {
 
         // JS-controller files for sections of type 'system' - will be created in '/core',                                                          //$repositoryDirA = array('s' => 'core', 'o' => 'coref', 'p' => 'www');
@@ -179,25 +195,45 @@ class Admin_SectionsController extends Indi_Controller_Admin_Exportable {
             if ($_ = $item['filter']) $item['_render']['filter']
                 = '<img src="resources/images/icons/btn-icon-filter.png" class="i-cell-img">' . $_;
 
-            // Get js-controller file name
-            $js = DOC . STD . '/' . $dir[$item['$keys']['type']] . '/js/admin/app/controller/' . $item['alias']. '.js';
+            if ($item['$keys']['type'] != 's') {
 
-            // If js-controller file exists
-            if (file_exists($js)) {
+                // Get js-controller file name
+                $js = DOC . STD . '/' . $dir[$item['$keys']['type']] . '/js/admin/app/controller/' . $item['alias']. '.js';
 
-                // Setup flag
-                $item['_system']['js-class'] = true;
+                // If js-controller file exists
+                if (file_exists($js)) {
 
-                // If js-controller file is empty - setup error
-                if (!$js = file_get_contents($js)) $item['_system']['js-error'] = 'Файл js-контроллера пустой';
+                    // Setup flag
+                    $item['_system']['js-class'] = true;
 
-                // Else we're unable to find parent class mention - setup error
-                else if (!preg_match('~extend:\s*(\'|")([a-zA-Z0-9\.]+)\1~', $js, $m))
-                    $item['_system']['js-error'] = 'В файле js-контроллера не удалось найти родительский класс';
+                    // If js-controller file is empty - setup error
+                    if (!$js = file_get_contents($js)) $item['_system']['js-error'] = 'Файл js-контроллера пустой';
 
-                // Else if parent class is not as per `extendsJs` prop - setup error
-                else if (($parent = $m[2]) != $item['extendsJs']) $item['_system']['js-error']
-                    = sprintf('Файл js-контроллера существует, но в нем родительский класс указан как %s', $parent);;
+                    // Else we're unable to find parent class mention - setup error
+                    else if (!preg_match('~extend:\s*(\'|")([a-zA-Z0-9\.]+)\1~', $js, $m))
+                        $item['_system']['js-error'] = 'В файле js-контроллера не удалось найти родительский класс';
+
+                    // Else if parent class is not as per `extendsJs` prop - setup error
+                    else if (($parent = $m[2]) != $item['extendsJs']) $item['_system']['js-error']
+                        = sprintf('Файл js-контроллера существует, но в нем родительский класс указан как %s', $parent);;
+                }
+
+            // Else
+            } else {
+
+                // If system app js is not yet set up - do it
+                if (!self::$systemAppJs) self::$systemAppJs = file_get_contents(DOC . STD . '/admin/classic/app.js');
+
+                // If js-controller file exists
+                if (preg_match('~Ext\.cmd\.derive\(\'Indi\.controller\.' . $item['alias'] . '\',([^,]+),~', self::$systemAppJs, $m)) {
+
+                    // Setup flag
+                    $item['_system']['js-class'] = true;
+
+                    // If parent class is not as per `extendsJs` prop - setup error
+                    if ($m[1] != $item['extendsJs']) $item['_system']['js-error']
+                        = sprintf('Файл js-контроллера существует, но в нем родительский класс указан как %s', $m[1]);
+                }
             }
 
             // Hide default values
