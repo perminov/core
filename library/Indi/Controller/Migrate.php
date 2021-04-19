@@ -369,6 +369,19 @@ class Indi_Controller_Migrate extends Indi_Controller {
         ]);
         cfgEnumset('element', 'datetime', 'when', 'month', ['title' => 'Месяц', 'move' => '']);
         cfgEnumset('element', 'datetime', 'when', 'week', ['title' => 'День недели', 'move' => 'month']);
+        cfgField('element', 'upload', 'maxSize', [
+            'title' => 'Максимальный размер',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'string',
+            'defaultValue' => '5M',
+            'move' => 'prependEntityTitle',
+        ]);
+        cfgField('element', 'upload', 'minSize', [
+            'title' => 'Минимальный размер',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'string',
+            'move' => 'maxSize',
+        ]);        
         alteredField('fields', 'entry', ['mode' => 'hidden']);
         section('params', ['extendsPhp' => 'Indi_Controller_Admin_CfgValue']);
         section('fields', ['filter' => '`entry` = "0"']);
