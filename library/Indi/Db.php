@@ -351,7 +351,7 @@ class Indi_Db {
                         'table' => 'enumset',
                         'rows' => $fEnumsetA[$fieldI['original']['id']],
                         'rowClass' => 'Enumset_Row',
-                        'found' => count($fEnumsetA[$fieldI['original']['id']])
+                        'found' => count($fEnumsetA[$fieldI['original']['id']] ?: [])
                     ));
                     unset($fEnumsetA[$fieldI['id']]);
                 }
