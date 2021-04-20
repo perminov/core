@@ -31,6 +31,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
         field('param', 'value')->delete();
         entity('param', ['titleFieldId' => 'cfgField']);
         consider('param', 'title', 'cfgField', ['foreign' => 'title', 'required' => 'y']);
+        m('Param')->fetchAll('`cfgField` = "0"')->delete();
         die('ok');
     }
     public function cfgFieldMetaAction() {
@@ -3855,7 +3856,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
         ));
         field('realtime', 'entries', array (
             'title' => 'Записи',
-            'columnTypeId' => 'VARCHAR(255)',
+            'columnTypeId' => 'TEXT',
             'elementId' => 'combo',
             'storeRelationAbility' => 'many',
         ));
