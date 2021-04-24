@@ -163,6 +163,7 @@ if (!is_file('ws.pem')) $prot = 'tcp'; else {
     stream_context_set_option($context, 'ssl', 'local_cert', 'ws.pem');
     stream_context_set_option($context, 'ssl', 'verify_peer', false);
     $prot = 'ssl';
+    if (!$ini['pem']) $ini['pem'] = true;
 }
 
 // Create socket server

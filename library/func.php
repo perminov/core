@@ -1598,10 +1598,17 @@ function field($table, $alias, array $ctor = array()) {
     // If $alias arg is an integer - assume it's a `field` entry's `id`, otherwise it's a `alias`
     $byprop = Indi::rexm('int11', $alias) ? 'id' : 'alias';
 
+    // Check whether `field`.`entry` column was already created
+    // This is a temporary check, to be used until all Indi Engine projects are updated
+    $entryColumn = Indi::db()->query('
+        SELECT * FROM `information_schema`.`columns` 
+        WHERE `table_name`="field" AND `column_name`="entry"
+    ')->fetch();
+
     // Try to find `field` entry
     $fieldR = Indi::model('Field')->fetchRow([
         '`entityId` = "' . $entityId . '"',
-        '`entry` = "' . (int) $ctor['entry'] . '"',
+        rif($entryColumn, '`entry` = "' . (int) $ctor['entry'] . '"', 'TRUE'),
         '`' . $byprop . '` = "' . $alias . '"'
     ]);
 

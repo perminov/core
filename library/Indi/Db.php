@@ -205,7 +205,7 @@ class Indi_Db {
 
                 // Collect localized fields
                 if ($fieldI['storeRelationAbility'] == 'none' && in($fieldI['l10n'], 'y,qn'))
-                    self::$_l10nA[$_[$fieldI['entityId']]][] = $fieldI['alias'];
+                    self::$_l10nA[$_[$fieldI['entityId']]][$fieldI['id']] = $fieldI['alias'];
             }
 
             // Unset tmp variable
@@ -351,7 +351,7 @@ class Indi_Db {
                         'table' => 'enumset',
                         'rows' => $fEnumsetA[$fieldI['original']['id']],
                         'rowClass' => 'Enumset_Row',
-                        'found' => count($fEnumsetA[$fieldI['original']['id']])
+                        'found' => count($fEnumsetA[$fieldI['original']['id']] ?: [])
                     ));
                     unset($fEnumsetA[$fieldI['id']]);
                 }
