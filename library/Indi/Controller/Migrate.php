@@ -24,6 +24,10 @@ class Indi_Controller_Migrate extends Indi_Controller {
         field('queueTask', 'chunk', ['move' => 'params']);
         field('queueChunk', 'itemsBytes', ['move' => 'queueSize']);
         grid('search', 'consistence', ['move' => '']);
+        section('fields', ['extendsPhp' => 'Indi_Controller_Admin_Field']);
+        param('field', 'entityId', 'groupBy', ['cfgValue' => '612']);
+        filter('fieldsAll', 'entityId', true)->move(10);
+        filter('fieldsAll', 'entityId', 'system', true)->move(10);
         die('ok');
     }
     public function cfgFieldRemoveLegacyAction() {
