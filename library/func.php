@@ -1531,6 +1531,13 @@ function u() {
 }
 
 /**
+ * Shorthand function for Indi::ini()
+ */
+function ini() {
+    return Indi::ini();
+}
+
+/**
  * Return $value, wrapped with $html, if $cond arg is true, or return just $value otherwise
  *
  * @param $val
@@ -1574,7 +1581,7 @@ function entity($table, array $ctor = array()) {
     if (!$entityR) $entityR = Indi::model('Entity')->createRow();
 
     // Assign other props and save
-    $entityR->assign($ctor)->save();
+    $entityR->assign($ctor)->{ini()->lang->migration ? 'basicUpdate' : 'save'}();
 
     // Return `entity` entry (newly created, or existing but updated)
     return $entityR;
@@ -1630,7 +1637,7 @@ function field($table, $alias, array $ctor = array()) {
     if ($ctor['entityId'] && $fieldR->entityId = $ctor['entityId']) unset($ctor['entityId']);
 
     // Assign other props and save
-    $fieldR->assign($ctor)->save();
+    $fieldR->assign($ctor)->{ini()->lang->migration ? 'basicUpdate' : 'save'}();
 
     // Return `field` entry (newly created, or existing but updated)
     return $fieldR;
@@ -1685,7 +1692,7 @@ function cfgField($table, $entry, $alias, array $ctor = array()) {
     if ($ctor['entityId'] && $fieldR->entityId = $ctor['entityId']) unset($ctor['entityId']);
 
     // Assign other props and save
-    $fieldR->assign($ctor)->save();
+    $fieldR->assign($ctor)->{ini()->lang->migration ? 'basicUpdate' : 'save'}();
 
     // Return `field` entry (newly created, or existing but updated)
     return $fieldR;
@@ -1723,7 +1730,7 @@ function section($alias, array $ctor = array()) {
     if ($ctor['entityId'] && $sectionR->entityId = $ctor['entityId']) unset($ctor['entityId']);
 
     // Assign other props and save
-    $sectionR->assign($ctor)->save();
+    $sectionR->assign($ctor)->{ini()->lang->migration ? 'basicUpdate' : 'save'}();
 
     // Return `section` entry (newly created, or existing but updated)
     return $sectionR;
@@ -1796,7 +1803,7 @@ function grid($section, $field, $ctor = false) {
     if ($ctor['fieldId'] && $gridR->fieldId = $ctor['fieldId']) unset($ctor['fieldId']);
 
     // Assign other props and save
-    $gridR->assign($ctor)->save();
+    $gridR->assign($ctor)->{ini()->lang->migration ? 'basicUpdate' : 'save'}();
 
     // Return `grid` entry (newly created, or existing but updated)
     return $gridR;
@@ -1848,7 +1855,7 @@ function enumset($table, $field, $alias, $ctor = false) {
         . $ctor['color'] . ';"></span>' . strip_tags($ctor['title']);
 
     // Assign other props and save
-    $enumsetR->assign($ctor)->save();
+    $enumsetR->assign($ctor)->{ini()->lang->migration ? 'basicUpdate' : 'save'}();
 
     // Return `enumset` entry (newly created, or existing but updated)
     return $enumsetR;
@@ -1901,7 +1908,7 @@ function cfgEnumset($table, $entry, $field, $alias, $ctor = false) {
         . $ctor['color'] . ';"></span>' . strip_tags($ctor['title']);
 
     // Assign other props and save
-    $enumsetR->assign($ctor)->save();
+    $enumsetR->assign($ctor)->{ini()->lang->migration ? 'basicUpdate' : 'save'}();
 
     // Return `enumset` entry (newly created, or existing but updated)
     return $enumsetR;
@@ -1947,7 +1954,7 @@ function thumb($table, $field, $alias, $ctor = false) {
     else $thumbR = Indi::model('Resize')->createRow();
 
     // Assign other props and save
-    $thumbR->assign($ctor)->save();
+    $thumbR->assign($ctor)->{ini()->lang->migration ? 'basicUpdate' : 'save'}();
 
     // Return `thumb` entry (newly created, or existing but updated)
     return $thumbR;
@@ -2021,7 +2028,7 @@ function section2action($section, $action, array $ctor = array()) {
     if (!$section2actionR) $section2actionR = Indi::model('Section2action')->createRow();
 
     // Assign props and save
-    $section2actionR->assign($ctor)->save();
+    $section2actionR->assign($ctor)->{ini()->lang->migration ? 'basicUpdate' : 'save'}();
 
     // Return `section2action` entry (newly created, or existing but updated)
     return $section2actionR;
@@ -2054,7 +2061,7 @@ function action($alias, array $ctor = array()) {
     if (!$actionR) $actionR = Indi::model('Action')->createRow();
 
     // Assign other props and save
-    $actionR->assign($ctor)->save();
+    $actionR->assign($ctor)->{ini()->lang->migration ? 'basicUpdate' : 'save'}();
 
     // Return `action` entry (newly created, or existing but updated)
     return $actionR;
@@ -2102,7 +2109,7 @@ function alteredField($section, $field, array $ctor = array()) {
     if ($ctor['sectionId'] && $alteredFieldR->sectionId = $ctor['sectionId']) unset($ctor['sectionId']);
 
     // Assign other props and save
-    $alteredFieldR->assign($ctor)->save();
+    $alteredFieldR->assign($ctor)->{ini()->lang->migration ? 'basicUpdate' : 'save'}();
 
     // Return `alteredField` entry (newly created, or existing but updated)
     return $alteredFieldR;
@@ -2165,7 +2172,7 @@ function filter($section, $field, $ctor = false) {
     if ($ctor['fieldId'] && $filterR->fieldId = $ctor['fieldId']) unset($ctor['fieldId']);
 
     // Assign other props and save
-    $filterR->assign($ctor)->save();
+    $filterR->assign($ctor)->{ini()->lang->migration ? 'basicUpdate' : 'save'}();
 
     // Return `filter` entry (newly created, or existing but updated)
     return $filterR;
@@ -2234,7 +2241,7 @@ function param($table, $field, $alias, $value = null) {
     else $paramR = m('Param')->createRow();
 
     // Assign other props and save
-    $paramR->assign($ctor)->save();
+    $paramR->assign($ctor)->{ini()->lang->migration ? 'basicUpdate' : 'save'}();
 
     // Return `param` entry (newly created, or existing but updated)
     return $paramR;
@@ -2286,7 +2293,7 @@ function consider($entity, $field, $consider, $ctor = false) {
         if ($ctor[$prop] && $considerR->$prop = $ctor[$prop]) unset($ctor[$prop]);
 
     // Assign other props and save
-    $considerR->assign($ctor)->save();
+    $considerR->assign($ctor)->{ini()->lang->migration ? 'basicUpdate' : 'save'}();
 
     // Return `consider` entry (newly created, or existing but updated)
     return $considerR;

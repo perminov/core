@@ -1135,7 +1135,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             $json[$mlfI] = $jtpl; $json[$mlfI][Indi::ini('lang')->admin] = $data[$mlfI];
 
             // Check whether setter-method exists and if yes - remember that
-            if (method_exists($this, $setter = 'set' . ucfirst($mlfI))) $setterA[$mlfI] = $setter;
+            if (method_exists($this, $setter = 'set' . ucfirst($mlfI)) && !ini()->lang->migration) $setterA[$mlfI] = $setter;
 
             // Else if value should be translated - collect such values for further batch translate
             else if (!$this->id || $this->field($mlfI)->param('refreshL10nsOnUpdate')) $batch[$mlfI] = $data[$mlfI];
