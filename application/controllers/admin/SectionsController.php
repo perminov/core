@@ -277,12 +277,8 @@ class Admin_SectionsController extends Indi_Controller_Admin_Exportable {
             // Get `sectionId` field extjs config
             $sectionId_field = $sectionR->combo('sectionId') + array('disabledOptions' => $sectionId_disabled);
 
-            // Build prompt msg
-            $msg = implode(array('Выберите родительский раздел, в подчинении у которого должны быть',
-                'созданы дубликаты выбранных разделов'), '<br>');
-
             // Prompt for timeId
-            jprompt($msg, array($sectionId_field));
+            jprompt(I_SECTION_CLONE_SELECT_PARENT, array($sectionId_field));
 
         // If answer is 'ok'
         } else if (Indi::get('answer') == 'ok') {

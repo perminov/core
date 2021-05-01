@@ -58,14 +58,13 @@ class Admin_LangController extends Indi_Controller_Admin {
 
             // Ask what we're going to do
             if ('no' == $this->confirm(sprintf(
-                'Если вы хотите %s язык "%s" для фракции "%s" нажмите "%s". ' .
-                'Если просто нужно привести в соответствие с текущим состоянием - нажмите "%s"',
-                $value == 'qy' ? 'добавить' : 'удалить', t()->row->title, $fraction, I_YES, I_NO), 'YESNOCANCEL'))
+                I_LANG_QYQN_CONFIRM,
+                mb_strtolower($value == 'qy' ? I_ADD : I_DELETE, 'utf-8'), t()->row->title, $fraction, I_YES, I_NO), 'YESNOCANCEL'))
                 return;
 
         // Else if we're going to setup fraction-status directly
         } else if ('ok' == $this->confirm(sprintf(
-            'Для фракции "%s" язык "%s" будет вручную помечен как "%s". Продолжить?',
+            I_LANG_QYQN_CONFIRM2,
             $fraction, t()->row->title, t()->row->enumset($cell, $value)
         ), 'OKCANCEL'))
             return;
@@ -93,7 +92,7 @@ class Admin_LangController extends Indi_Controller_Admin {
             $combo = ['fieldLabel' => '', 'allowBlank' => 0] + t()->row->combo('langId');
 
             // Prompt for source language
-            $prompt = $this->prompt('Выберите исходный язык', [$combo]);
+            $prompt = $this->prompt(I_LANG_QYQN_SELECT, [$combo]);
 
             // Check prompt data
             $_ = jcheck(['langId' => ['req' => true, 'rex' => 'int11', 'key' => 'lang']], $prompt);
