@@ -27,6 +27,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
         section('fields', ['extendsPhp' => 'Indi_Controller_Admin_Field']);
         filter('fieldsAll', 'entityId', true)->move(10);
         filter('fieldsAll', 'entityId', 'system', true)->move(10);
+        section2action('lang','export', ['profileIds' => '1'])->move(2);
         die('ok');
     }
     public function cfgFieldRemoveLegacyAction() {

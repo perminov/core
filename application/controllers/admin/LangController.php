@@ -295,4 +295,54 @@ class Admin_LangController extends Indi_Controller_Admin {
         //
         jflush(true, 'OK');
     }
+
+    /**
+     * Export admin system or custom ui translation as a php-code
+     */
+    public function exportAction() {
+
+        // Get `lang` fields, representing fractions of ui
+        $ui = t()->model->fields('adminSystem,adminCustom')->column('id');
+
+        // Create phantom `ui` field for being used for radio buttons rendering
+        $radio = m('Field')->createRow([
+            'alias' => 'ui',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'storeRelationAbility' => 'one',
+            'relation' => 'field',
+            'filter' => '`id` IN (' . im($ui) . ')',
+            'mode' => 'hidden'
+        ], true);
+
+        // Append to fields list and set first fraction to be selected by default
+        t()->model->fields()->append($radio); t()->row->ui = $ui[0];
+
+        // Build config for ui-radio and prompt for ui
+        $prompt = $this->prompt(I_LANG_EXPORT_FRACTION, [t()->row->radio('ui')]);
+
+        // Check prompt data
+        $_ = jcheck(['ui' => ['req' => true, 'rex' => 'int11', 'key' => 'field']], $prompt);
+
+        // Prepare params
+        $params = ['source' => t()->row->alias];
+
+        // Build queue class name
+        $queueClassName = 'Indi_Queue_L10n_' . ucfirst($_['ui']->alias) . 'UiExport';
+
+        // Check that class exists
+        if (!class_exists($queueClassName)) jflush(false, sprintf('Не найден класс %s', $queueClassName));
+
+        // Create queue class instance
+        $queue = new $queueClassName();
+
+        // Run first stage
+        $queueTaskR = $queue->chunk($params);
+
+        // Auto-start queue as a background process
+        Indi::cmd('queue', array('queueTaskId' => $queueTaskR->id));
+
+        //
+        jflush(true, 'OK');
+    }
 }

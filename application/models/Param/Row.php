@@ -4,9 +4,10 @@ class Param_Row extends Indi_Db_Table_Row_Noeval {
     /**
      * Build a string, that will be used in Param_Row->export()
      *
+     * @param string $certain
      * @return string
      */
-    protected function _ctor() {
+    protected function _ctor($certain = '') {
 
         // Use original data as initial ctor
         $ctor = $this->_original;
@@ -17,6 +18,9 @@ class Param_Row extends Indi_Db_Table_Row_Noeval {
         // Exclude props that will be already represented by shorthand-fn args
         foreach (ar('fieldId,possibleParamId,cfgField') as $arg) unset($ctor[$arg]);
 
+        // If certain field should be exported - keep it only
+        if ($certain) $ctor = [$certain => $ctor[$certain]];
+
         // Stringify
         return _var_export($ctor);
     }
@@ -24,15 +28,16 @@ class Param_Row extends Indi_Db_Table_Row_Noeval {
     /**
      * Build an expression for creating the current `param` entry in another project, running on Indi Engine
      *
+     * @param string $certain
      * @return string
      */
-    public function export() {
+    public function export($certain = '') {
 
         // Return
         return "param('" .
             $this->foreign('fieldId')->foreign('entityId')->table . "', '" .
             $this->foreign('fieldId')->alias . "', '" .
-            $this->foreign('cfgField')->alias . "', " . $this->_ctor() . ");";
+            $this->foreign('cfgField')->alias . "', " . $this->_ctor($certain) . ");";
     }
 
     /**

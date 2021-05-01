@@ -1629,9 +1629,10 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
     /**
      * Build a string, that will be used in Field_Row->export()
      *
+     * @param string $certain
      * @return string
      */
-    protected function _ctor() {
+    protected function _ctor($certain = null) {
 
         // Use original data as initial ctor
         $ctor = $this->_original;
@@ -1645,6 +1646,9 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
         // Exclude props that will be already represented by shorthand-fn args
         foreach (ar('entityId,alias' . rif($this->entry, ',entry')) as $arg) unset($ctor[$arg]);
 
+        // If certain field should be exported - keep it only
+        if ($certain) $ctor = [$certain => $ctor[$certain]];
+
         // Foreach $ctor prop
         foreach ($ctor as $prop => &$value) {
 
@@ -1652,7 +1656,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
             $field = Indi::model('Field')->fields($prop);
 
             // Exclude prop, if it has value equal to default value
-            if ($field->defaultValue == $value) unset($ctor[$prop]);
+            if ($field->defaultValue == $value && !in($prop, $certain)) unset($ctor[$prop]);
 
             // Else if $prop is 'move' - get alias of the field, that current field is after,
             // among fields with same value of `entityId` prop
@@ -1673,9 +1677,10 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
     /**
      * Build an expression for creating the current `field` entry in another project, running on Indi Engine
      *
+     * @param string $certain
      * @return string
      */
-    public function export() {
+    public function export($certain = null) {
 
         // Shortcuts
         $table = $this->foreign('entityId')->table;
@@ -1683,8 +1688,11 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
 
         // Build `field` entry creation line
         $lineA[] = $this->entry
-            ? "cfgField('" . $table . "', '" . $entry . "', '" . $this->alias . "', " . $this->_ctor() . ");"
-            : "field('" . $table . "', '" . $this->alias . "', " . $this->_ctor() . ");";
+            ? "cfgField('" . $table . "', '" . $entry . "', '" . $this->alias . "', " . $this->_ctor($certain) . ");"
+            : "field('" . $table . "', '" . $this->alias . "', " . $this->_ctor($certain) . ");";
+
+        // If $certain arg is given - export it only
+        if ($certain) return $lineA[0];
 
         // Foreach `enumset` entry, nested within current `field` entry
         // - build `enumset` entry's creation expression

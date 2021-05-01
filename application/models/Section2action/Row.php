@@ -24,9 +24,10 @@ class Section2action_Row extends Indi_Db_Table_Row {
     /**
      * Build a string, that will be used in Section2action_Row->export()
      *
+     * @param string $certain
      * @return string
      */
-    protected function _ctor() {
+    protected function _ctor($certain = '') {
 
         // Use original data as initial ctor
         $ctor = $this->_original;
@@ -37,6 +38,9 @@ class Section2action_Row extends Indi_Db_Table_Row {
         // Exclude props that are already represented by one of shorthand-fn args
         foreach (ar('sectionId,actionId') as $arg) unset($ctor[$arg]);
 
+        // If certain field should be exported - keep it only
+        if ($certain) $ctor = [$certain => $ctor[$certain]];
+
         // Foreach $ctor prop
         foreach ($ctor as $prop => &$value) {
 
@@ -44,10 +48,10 @@ class Section2action_Row extends Indi_Db_Table_Row {
             $fieldR = Indi::model('Section2action')->fields($prop);
 
             // Exclude prop, if it has value equal to default value (unless it's `profileIds`)
-            if ($fieldR->defaultValue == $value && $prop != 'profileIds') unset($ctor[$prop]);
+            if ($fieldR->defaultValue == $value && $prop != 'profileIds' && !in($prop, $certain)) unset($ctor[$prop]);
 
             // Exclude `title` prop, if it was auto-created
-            else if ($prop == 'title' && ($tf = $this->model()->titleField()) && $tf->storeRelationAbility != 'none')
+            else if ($prop == 'title' && ($tf = $this->model()->titleField()) && $tf->storeRelationAbility != 'none' && !in($prop, $certain))
                 unset($ctor[$prop]);
 
             // Else if prop contains keys - use aliases instead
@@ -63,15 +67,16 @@ class Section2action_Row extends Indi_Db_Table_Row {
     /**
      * Build an expression for creating the current `section2action` entry in another project, running on Indi Engine
      *
+     * @param string $certain
      * @return string
      */
-    public function export() {
+    public function export($certain = '') {
 
         // Return creation expression
         return "section2action('" .
             $this->foreign('sectionId')->alias . "','" .
             $this->foreign('actionId')->alias . "', " .
-            $this->_ctor() . ");";
+            $this->_ctor($certain) . ");";
     }
 
     /**

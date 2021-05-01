@@ -278,9 +278,10 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
     /**
      * Build a string, that will be used in Enumset_Row->export()
      *
+     * @param string $certain
      * @return string
      */
-    protected function _ctor() {
+    protected function _ctor($certain = '') {
 
         // Use original data as initial ctor
         $ctor = $this->_original;
@@ -290,6 +291,9 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
 
         // Exclude props that will be already represented by shorthand-fn args
         foreach (ar('fieldId,alias') as $arg) unset($ctor[$arg]);
+
+        // If certain field should be exported - keep it only
+        if ($certain) $ctor = [$certain => $ctor[$certain]];
 
         // Foreach $ctor prop
         foreach ($ctor as $prop => &$value) {
@@ -309,9 +313,10 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
     /**
      * Build an expression for creating the current `enumset` entry in another project, running on Indi Engine
      *
+     * @param string $certain
      * @return string
      */
-    public function export() {
+    public function export($certain = '') {
 
         // Shortcut
         $fieldR = $this->foreign('fieldId');
@@ -322,11 +327,11 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
                 $fieldR->foreign('entityId')->table . "', '" .
                 ($fieldR->foreign('entry')->alias ?: $fieldR->entry) . "', '" .
                 $fieldR->alias . "', '" .
-                $this->alias . "', " . $this->_ctor() . ");"
+                $this->alias . "', " . $this->_ctor($certain) . ");"
             : "enumset('" .
                 $fieldR->foreign('entityId')->table . "', '" .
                 $fieldR->alias . "', '" .
-                $this->alias . "', " . $this->_ctor() . ");";
+                $this->alias . "', " . $this->_ctor($certain) . ");";
     }
 
     /**

@@ -48,9 +48,10 @@ class Grid_Row extends Indi_Db_Table_Row {
     /**
      * Build a string, that will be used in Grid_Row->export()
      *
+     * @param string $certain
      * @return string
      */
-    protected function _ctor() {
+    protected function _ctor($certain = null) {
 
         // Use original data as initial ctor
         $ctor = $this->_original;
@@ -61,6 +62,9 @@ class Grid_Row extends Indi_Db_Table_Row {
         // Exclude props that are already represented by one of shorthand-fn args
         foreach (ar('sectionId,fieldId,alias,further') as $arg) unset($ctor[$arg]);
 
+        // If certain field should be exported - keep it only
+        if ($certain) $ctor = [$certain => $ctor[$certain]];
+
         // Foreach $ctor prop
         foreach ($ctor as $prop => &$value) {
 
@@ -68,10 +72,10 @@ class Grid_Row extends Indi_Db_Table_Row {
             $field = Indi::model('Grid')->fields($prop);
 
             // Exclude prop, if it has value equal to default value
-            if ($field->defaultValue == $value) unset($ctor[$prop]);
+            if ($field->defaultValue == $value && !in($prop, $certain)) unset($ctor[$prop]);
 
             // Exclude `title` prop, if it was auto-created
-            else if ($prop == 'title' && ($tf = $this->model()->titleField()) && $tf->storeRelationAbility != 'none')
+            else if ($prop == 'title' && ($tf = $this->model()->titleField()) && $tf->storeRelationAbility != 'none' && !in($prop, $certain))
                 unset($ctor[$prop]);
 
             // Else if $prop is 'move' - get alias of the field, that current field is after,
@@ -96,22 +100,23 @@ class Grid_Row extends Indi_Db_Table_Row {
     /**
      * Build an expression for creating the current grid column in another project, running on Indi Engine
      *
+     * @param string $certain
      * @return string
      */
-    public function export() {
+    public function export($certain = '') {
 
         // Return creation expression
         if ($this->further) return "grid('" .
             $this->foreign('sectionId')->alias . "', '" .
             $this->foreign('fieldId')->alias . "', '" .
             $this->foreign('fieldId')->rel()->fields($this->further)->alias . "', " .
-            $this->_ctor() . ");";
+            $this->_ctor($certain) . ");";
 
         // Return creation expression
         else return "grid('" .
             $this->foreign('sectionId')->alias . "', '" .
             ($this->foreign('fieldId')->alias ?: $this->alias) . "', " .
-            $this->_ctor() . ");";
+            $this->_ctor($certain) . ");";
     }
 
     /**

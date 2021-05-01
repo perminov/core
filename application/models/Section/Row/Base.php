@@ -69,9 +69,10 @@ class Section_Row_Base extends Indi_Db_Table_Row {
     /**
      * Build a string, that will be used in Section_Row_Base->export()
      *
+     * @param string $certain
      * @return string
      */
-    protected function _ctor() {
+    protected function _ctor($certain = '') {
 
         // Use original data as initial ctor
         $ctor = $this->_original;
@@ -81,6 +82,9 @@ class Section_Row_Base extends Indi_Db_Table_Row {
 
         // Exclude props that are already represented by one of shorthand-fn args
         foreach (ar('alias') as $arg) unset($ctor[$arg]);
+
+        // If certain field should be exported - keep it only
+        if ($certain) $ctor = [$certain => $ctor[$certain]];
 
         // Foreach $ctor prop
         foreach ($ctor as $prop => &$value) {
@@ -107,12 +111,16 @@ class Section_Row_Base extends Indi_Db_Table_Row {
     /**
      * Build an expression for creating the current `section` entry in another project, running on Indi Engine
      *
+     * @param string $certain
      * @return string
      */
-    public function export() {
+    public function export($certain = '') {
 
         // Build `section` entry creation expression
-        $lineA[] = "section('" . $this->alias . "', " . $this->_ctor() . ");";
+        $lineA[] = "section('" . $this->alias . "', " . $this->_ctor($certain) . ");";
+
+        // If $certain arg is given - export it only
+        if ($certain) return $lineA[0];
 
         // Foreach `section2action` entry, nested within current `section` entry
         // - build `section2action` entry's creation expression
