@@ -1834,4 +1834,61 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
         // Position field for it to be after field, specified by $this->_system['move']
         $this->position($after);
     }
+
+    /**
+     *
+     */
+    public function toggleL10n($value, $lang, $async = true) {
+
+        // Get fraction
+        $fraction = ar(t()->row->l10nFraction());
+
+        // Build queue class name
+        $queueClassName = 'Indi_Queue_L10n_FieldToggleL10n';
+
+        // If field's element is file-upload - use special queue class
+        if ($this->foreign('elementId')->alias == 'upload') $queueClassName .= 'Upload';
+
+        // Create queue class instance
+        $queue = new $queueClassName();
+
+        // Get target langs
+        $target = [];
+        foreach ($fraction as $fractionI) $target[$fractionI] = m('Lang')->fetchAll([
+            '`' . $fractionI . '` = "y"',
+            '`alias` != "' . $lang . '"'
+        ])->column('alias', true);
+
+        // Prepare params
+        $params = [
+            'field' => m($this->entityId)->table() . ':' . $this->alias . rif($this->entry, ':$1'),
+            'source' => $lang
+        ];
+
+        // If we're dealing with `action` entity's `title` field
+        if ($params['field'] == 'action:title' && !$_ = []) {
+
+            // Collect all target languages
+            foreach ($target as $targets) $_ = array_unique(array_merge($_, ar($targets)));
+
+            // Pass separately, to be used for root-level `queueChunk` entry ('action:title')
+            $params['rootTarget'] = im($_);
+        }
+
+        // Prepare params
+        $params['target'] = $target;
+
+        // If we're going to turn l10n On for this field - specify target languages,
+        // else setup 'toggle' param as 'n', indicating that l10n will be turned On for this field
+        if ($value != 'qy') $params['toggle'] = 'n';
+
+        // Run first stage
+        $queueTaskR = $queue->chunk($params);
+
+        // If $async arg is true - auto-start queue as a background process
+        if ($async === true) Indi::cmd('queue', ['queueTaskId' => $queueTaskR->id]);
+
+        // Else start queue in synchronous mode
+        else $queueTaskR->start();
+    }
 }
