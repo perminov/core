@@ -1,10 +1,10 @@
 <?php
-class Indi_Queue_L10n_AdminSystemUiExport extends Indi_Queue_L10n_AdminSystemUi {
+class Indi_Queue_L10n_AdminCustomUiExport extends Indi_Queue_L10n_AdminCustomUi {
 
     /**
      * Fraction dir
      */
-    public $fractionDir = 'core';
+    public $fractionDir = 'www';
 
     /**
      * Use trait
