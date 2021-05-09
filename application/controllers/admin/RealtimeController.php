@@ -55,7 +55,7 @@ class Admin_RealtimeController extends Indi_Controller_Admin {
         if (Indi::uri()->action == 'restart') $this->restartAction();
 
         // If $_GET['newtab'] exists
-        if (array_key_exists('newtab', Indi::get())) {
+        if (array_key_exists('newtab', (array) Indi::get())) {
 
             // Check CID
             jcheck(['cid' => ['req' => true, 'rex' => 'wskey']], ['cid' => CID]);
@@ -83,7 +83,7 @@ class Admin_RealtimeController extends Indi_Controller_Admin {
             jflush(false);
 
         // Else if $_GET['closetab'] exists
-        } else if (array_key_exists('closetab', Indi::get())) {
+        } else if (array_key_exists('closetab', (array) Indi::get())) {
 
             // Check CID
             jcheck(['cid' => ['req' => true, 'rex' => 'wskey']], ['cid' => CID]);

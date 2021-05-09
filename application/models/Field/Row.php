@@ -1836,12 +1836,17 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
     }
 
     /**
+     * Toggle l10n for a field
      *
+     * @param $value
+     * @param $lang
+     * @param bool $async
+     * @throws Exception
      */
     public function toggleL10n($value, $lang, $async = true) {
 
         // Get fraction
-        $fraction = ar(t()->row->l10nFraction());
+        $fraction = ar($this->l10nFraction());
 
         // Build queue class name
         $queueClassName = 'Indi_Queue_L10n_FieldToggleL10n';
@@ -1888,7 +1893,14 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
         // If $async arg is true - auto-start queue as a background process
         if ($async === true) Indi::cmd('queue', ['queueTaskId' => $queueTaskR->id]);
 
-        // Else start queue in synchronous mode
-        else $queueTaskR->start();
+        // Else
+        else {
+
+            // Update value of `l10n` prop
+            $this->assign(['l10n' => $value])->basicUpdate();
+
+            // Start queue in synchronous mode
+            $queueTaskR->start();
+        }
     }
 }
